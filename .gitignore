@@ -1,0 +1,6 @@
+.hoplite/
+android-keyboard/build/
+build/evidence/
+*.jks
+*.keystore
+__pycache__/

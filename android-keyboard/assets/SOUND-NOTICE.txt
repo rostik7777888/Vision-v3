@@ -1,0 +1,12 @@
+The keyboard click WAVs are short excerpts from the MP3 supplied by the user
+(`u_a4gfvwagf1-iphone-keyboard-typing-sound-effect-336778.mp3`, SHA-256
+`c0b22cea8db27239d17d9fe12beac2b69cc52f850cd990bdab7cbd25c962d1cd`). The
+shared transient is cropped at 29,400–30,020 frames (0.666667–0.680272 seconds)
+after decoding at 44.1 kHz, stereo PCM16. A 22-frame edge fade prevents clicks
+at the file boundaries; no gain, pitch, or playback-rate changes are applied.
+The same supplied transient is used for key, delete, and space because this
+recording does not identify which unlabelled sound belongs to each action.
+
+This notice records only that the file was user-supplied. It does not verify
+Apple/iPhone provenance or grant redistribution rights; obtain any permissions
+needed before distributing the supplied recording or these excerpts.
