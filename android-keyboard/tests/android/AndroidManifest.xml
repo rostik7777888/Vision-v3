@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.trost.keyboard.verification">
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34"/>
-    <application android:label="trost verification" android:allowBackup="false"/>
+    <application android:label="fishka typing verification" android:allowBackup="false" android:theme="@android:style/Theme.Material.NoActionBar">
+        <activity android:name=".EditorFixture" android:exported="true"/>
+    </application>
     <instrumentation android:name=".VerificationRunner" android:targetPackage="com.trost.keyboard.restore" android:functionalTest="true"/>
 </manifest>

@@ -50,7 +50,6 @@ public final class Lexicon {
     };
     private volatile boolean loading;
     private volatile boolean loaded;
-    private volatile String activeLanguage = "ru";
 
     private Lexicon() {
     }
@@ -101,7 +100,7 @@ public final class Lexicon {
         }
     }
 
-    public synchronized void install$app_debug(Map<String, ? extends List<String>> dictionaries) {
+    public void install$app_debug(Map<String, ? extends List<String>> dictionaries) {
         model.clearDictionaries();
         if (dictionaries != null) {
             for (Map.Entry<String, ? extends List<String>> entry : dictionaries.entrySet()) {
@@ -143,6 +142,8 @@ public final class Lexicon {
     public void setObserver(BiConsumer<String, String> observer) {
     }
 
+    public boolean isReady() { return loaded; }
+
     public boolean contains(String language, String word) {
         return model.contains(language, word);
     }
@@ -157,9 +158,6 @@ public final class Lexicon {
 
     public List<String> suggest(String language, String prefix, String previous) {
         String lang = language == null ? "" : language;
-        if ("ru".equals(lang) || "en".equals(lang)) {
-            activeLanguage = lang;
-        }
         String typed = prefix == null ? "" : prefix;
         String prior = previous == null ? "" : previous;
         String key = model.revision() + "\u0000" + lang + "\u0000" + typed + "\u0000" + prior;
@@ -260,8 +258,7 @@ public final class Lexicon {
                 queueSave();
             }
         };
-        if (Looper.myLooper() == Looper.getMainLooper()) DISK.execute(update);
-        else update.run();
+        DISK.execute(update);
     }
 
     private void queueSave() {

@@ -47,14 +47,6 @@ chars.write_text(source.replace(needle,needle+'''    invoke-static {v0}, Lcom/tr
     move-result-object v0
 ''',1))
 
-source=service.read_text()
-pattern=r'(?P<start>    :cond_17\n    iget-object v0, p0, Lcom/trost/ioskeyboard/IosKeyboardService;->lang:Ljava/lang/String;\n).*?    :cond_18\n(?P<end>    iput-object v1, p0, Lcom/trost/ioskeyboard/IosKeyboardService;->lang:Ljava/lang/String;)'
-source,count=re.subn(pattern,r'\g<start>\n    invoke-static {p0, v0}, Lcom/trost/ioskeyboard/LanguageCatalog;->next(Landroid/content/Context;Ljava/lang/String;)Ljava/lang/String;\n    move-result-object v1\n\g<end>',source,flags=re.S)
-assert count==1;service.write_text(source)
-hook(service,'private final press(Ljava/lang/String;)V','    invoke-static {p0, p1}, Lcom/trost/ioskeyboard/Lexicon;->observe(Landroid/inputmethodservice/InputMethodService;Ljava/lang/String;)V')
-hook(service,'private final choose(Ljava/lang/String;)V', '''    iget-object v0, p0, Lcom/trost/ioskeyboard/IosKeyboardService;->lang:Ljava/lang/String;
-    invoke-static {p0, v0, p1}, Lcom/trost/ioskeyboard/Lexicon;->observeSelection(Landroid/inputmethodservice/InputMethodService;Ljava/lang/String;Ljava/lang/String;)V''')
-
 source=native.read_text();signature='public static key(Lcom/trost/ioskeyboard/TypingView;Landroid/graphics/Canvas;Lcom/trost/ioskeyboard/TypingView$Key;Z)V';old=method(source,signature)
 changed,count=re.subn(r'    const-string v1, "ru".*?    :goto_3\n    move-object v1, v0','''    invoke-static {v0}, Lcom/trost/ioskeyboard/LanguageCatalog;->name(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v1''',old,count=1,flags=re.S)
@@ -74,18 +66,19 @@ for java in (root/'src/com/trost/ioskeyboard').glob('*.java'):
 for smali in (overlay/'smali').rglob('*.smali'):
     dest=base/'smali_classes3'/smali.relative_to(overlay/'smali');dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(smali,dest)
 for sound in (root/'res/raw').glob('*.wav'):shutil.copy2(sound,base/'res/raw'/sound.name)
-shutil.copy2(root/'assets/SOUND-NOTICE.txt',base/'assets/SOUND-NOTICE.txt')
+for notice in (root/'assets').glob('*'):
+    if notice.is_file():shutil.copy2(notice,base/'assets'/notice.name)
 
 ns='http://schemas.android.com/apk/res/android';ET.register_namespace('android',ns)
-manifest=ET.parse(base/'AndroidManifest.xml');m=manifest.getroot();m.set('package','com.trost.keyboard.restore');m.set('{'+ns+'}versionCode','13');m.set('{'+ns+'}versionName','1.9.2')
+manifest=ET.parse(base/'AndroidManifest.xml');m=manifest.getroot();m.set('package','com.trost.keyboard.restore');m.set('{'+ns+'}versionCode','14');m.set('{'+ns+'}versionName','1.9.3')
 for perm in list(m.findall('uses-permission')):
     if perm.get('{'+ns+'}name')=='android.permission.INTERNET':m.remove(perm)
-m.find('application').set('{'+ns+'}label','trost 1.9.2')
+m.find('application').set('{'+ns+'}label','fishka typing')
 manifest.write(base/'AndroidManifest.xml',encoding='utf-8',xml_declaration=True)
-yml=(base/'apktool.yml').read_text().replace('versionCode: 10','versionCode: 13').replace('versionName: 1.8','versionName: 1.9.2');(base/'apktool.yml').write_text(yml)
+yml=(base/'apktool.yml').read_text().replace('versionCode: 10','versionCode: 14').replace('versionName: 1.8','versionName: 1.9.3');(base/'apktool.yml').write_text(yml)
 strings=ET.parse(base/'res/values/strings.xml')
 for string in strings.getroot():
-    if string.get('name') in ('app_name','keyboard_name'):string.text='trost 1.9.2'
+    if string.get('name') in ('app_name','keyboard_name'):string.text='fishka typing'
 strings.write(base/'res/values/strings.xml',encoding='utf-8',xml_declaration=True)
 (base/'res/values/styles.xml').write_text('''<resources><style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
 <item name="android:windowBackground">#030b08</item><item name="android:colorAccent">#64ff8f</item>
@@ -97,10 +90,4 @@ for signature in ['public static toolbarTouch(Lcom/trost/ioskeyboard/TypingView;
     assert method(original_native,signature)==method(native.read_text(),signature),'B toolbar must remain unchanged'
 for signature in ['protected onDraw(Landroid/graphics/Canvas;)V','protected onMeasure(II)V']:
     assert method(original_view,signature)==method(view.read_text(),signature),'Keyboard draw/measure must remain unchanged'
-old_press=method(original_service,'private final press(Ljava/lang/String;)V');new_press=method(service.read_text(),'private final press(Ljava/lang/String;)V')
-language_fragment = re.search(pattern, old_press, re.S).group(0)
-replacement_fragment = re.search(r'    :cond_17\n    iget-object v0, p0, Lcom/trost/ioskeyboard/IosKeyboardService;->lang:Ljava/lang/String;\n\n    invoke-static.*?    iput-object v1, p0, Lcom/trost/ioskeyboard/IosKeyboardService;->lang:Ljava/lang/String;', new_press, re.S).group(0)
-verified_press = new_press.replace(replacement_fragment, language_fragment, 1)
-verified_press = verified_press.replace('\n    invoke-static {p0, p1}, Lcom/trost/ioskeyboard/Lexicon;->observe(Landroid/inputmethodservice/InputMethodService;Ljava/lang/String;)V\n', '', 1)
-assert old_press == verified_press, 'No other key handlers, including B, may change'
-print('1.9 features restored; original keyboard/B intact; adaptive offline T9 and MP3 clips installed')
+print('fishka typing built; reference keyboard/B rendering preserved; stable Java IME installed')

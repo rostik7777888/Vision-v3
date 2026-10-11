@@ -27,6 +27,16 @@ final class Neon {
         d.setCornerRadius(dp(c,22));d.setStroke(dp(c,1),0xffb1ffc5);
         return new RippleDrawable(ColorStateList.valueOf(0x2264ff8f),d,null);
     }
+    static void pressAnimation(View view) {
+        view.setOnTouchListener((target,event)->{
+            int action=event.getActionMasked();
+            if(action==android.view.MotionEvent.ACTION_DOWN)
+                target.animate().scaleX(.97f).scaleY(.97f).setDuration(80).start();
+            else if(action==android.view.MotionEvent.ACTION_UP||action==android.view.MotionEvent.ACTION_CANCEL)
+                target.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+            return false;
+        });
+    }
     static final class Wallpaper extends View {
         private final Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
         Wallpaper(Context c){super(c);setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);}
@@ -81,6 +91,7 @@ final class Neon {
         Toggle(Context c,boolean value,String label,java.util.function.Consumer<Boolean> change) {
             super(c);checked=value;this.label=label;updateDescription();
             setOnClickListener(v->{checked=!checked;updateDescription();invalidate();change.accept(checked);});
+            pressAnimation(this);
         }
         private void updateDescription(){setContentDescription(label+(checked?": включено":": выключено"));}
         @Override protected void onDraw(Canvas c) {

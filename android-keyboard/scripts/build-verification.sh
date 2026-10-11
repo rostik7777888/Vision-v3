@@ -7,7 +7,7 @@ export PATH="$JAVA_HOME/bin:$PATH"
 TOOLS="$SDK/build-tools/35.0.0"; ANDROID="$SDK/platforms/android-35/android.jar"; OUT="$ROOT/build/verification"
 mkdir -p "$OUT/classes" "$OUT/dex"
 "$TOOLS/aapt2" link -o "$OUT/base.apk" -I "$ANDROID" --manifest "$ROOT/tests/android/AndroidManifest.xml"
-javac -source 8 -target 8 -encoding UTF-8 -classpath "$ANDROID" -d "$OUT/classes" "$ROOT/tests/android/src/com/trost/keyboard/verification/VerificationRunner.java"
+javac -source 8 -target 8 -encoding UTF-8 -classpath "$ANDROID" -d "$OUT/classes" "$ROOT/tests/android/src/com/trost/keyboard/verification/"*.java
 jar cf "$OUT/classes.jar" -C "$OUT/classes" .
 "$TOOLS/d8" --min-api 24 --lib "$ANDROID" --output "$OUT/dex" "$OUT/classes.jar"
 cp "$OUT/base.apk" "$OUT/unsigned.apk"; (cd "$OUT/dex" && zip -q -j "$OUT/unsigned.apk" classes*.dex)

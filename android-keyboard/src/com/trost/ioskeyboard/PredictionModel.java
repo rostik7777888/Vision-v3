@@ -32,7 +32,7 @@ public final class PredictionModel {
     private static final int MAX_WORD_LENGTH = 32;
     private static final int PREFIX_DEPTH = 3;
     private static final int PREFIX_BUCKET_LIMIT = 256;
-    private static final int EDIT_WORD_LIMIT = 20000;
+    private static final int EDIT_WORD_LIMIT = 6000;
     private static final int EDIT_BUCKET_LIMIT = 32;
     private static final int EDIT_CANDIDATE_LIMIT = 256;
 
@@ -43,6 +43,7 @@ public final class PredictionModel {
             new HashMap<String, LinkedHashMap<String, Integer>>();
     private File storageFile;
     private long revision;
+    private long dictionaryGeneration;
     private int totalBigrams;
 
     public PredictionModel() {
@@ -60,10 +61,14 @@ public final class PredictionModel {
         return revision;
     }
 
-    public synchronized void setDictionary(String language, Map<String, Integer> words) {
+    public void setDictionary(String language, Map<String, Integer> words) {
         String lang = normalizeLanguage(language);
         if (lang == null || words == null) {
             return;
+        }
+        final long generation;
+        synchronized (this) {
+            generation = dictionaryGeneration;
         }
 
         List<DictionaryWord> entries = new ArrayList<DictionaryWord>();
@@ -103,12 +108,19 @@ public final class PredictionModel {
                 }
             }
         }
-        dictionaries.put(lang, index);
-        revision++;
+        index.alphabeticalWords.addAll(index.frequency.keySet());
+        Collections.sort(index.alphabeticalWords);
+        synchronized (this) {
+            if (generation == dictionaryGeneration) {
+                dictionaries.put(lang, index);
+                revision++;
+            }
+        }
     }
 
     public synchronized void clearDictionaries() {
         dictionaries.clear();
+        dictionaryGeneration++;
         revision++;
     }
 
@@ -198,7 +210,10 @@ public final class PredictionModel {
             return null;
         }
         String normalized = normalizeWord(lang, word);
-        if (normalized == null || codePointLength(normalized) < (live ? 5 : 3)
+        if (live) {
+            return correctLive(lang, normalized, word);
+        }
+        if (normalized == null || codePointLength(normalized) < 3
                 || contains(lang, normalized)) {
             return null;
         }
@@ -216,7 +231,7 @@ public final class PredictionModel {
                 continue;
             }
             int frequency = index.frequency.get(candidate);
-            int minimumFrequency = live ? 8000 : 1000;
+            int minimumFrequency = 1000;
             if (frequency < minimumFrequency) {
                 continue;
             }
@@ -228,7 +243,7 @@ public final class PredictionModel {
         }
         RankedWord best = candidates.get(0);
         if (candidates.size() > 1) {
-            double margin = live ? 1.6d : 1.1d;
+            double margin = 1.1d;
             if (best.score - candidates.get(1).score < margin) {
                 return null;
             }
@@ -236,8 +251,62 @@ public final class PredictionModel {
         return best.word;
     }
 
+    private String correctLive(String language, String normalized, String typed) {
+        if (normalized == null) {
+            return null;
+        }
+        boolean knownWord = contains(language, normalized);
+        DictionaryIndex index = dictionaries.get(language);
+        boolean knownPrefix = index != null && index.hasWordStartingWith(normalized);
+        Map<String, Integer> personal = learned.get(language);
+        if (personal != null) {
+            for (String candidate : personal.keySet()) {
+                if (candidate.startsWith(normalized)) {
+                    knownPrefix = true;
+                    break;
+                }
+            }
+        }
+
+        Map<String, Integer> frequencies = new HashMap<String, Integer>();
+        for (String candidate : editCandidates(language, normalized)) {
+            int frequency = 0;
+            if (index != null) {
+                Integer dictionaryFrequency = index.frequency.get(candidate);
+                if (dictionaryFrequency != null) {
+                    frequency = dictionaryFrequency.intValue();
+                }
+            }
+            Integer personalCount = personal == null ? null : personal.get(candidate);
+            if (personalCount != null) {
+                long learnedFrequency = (long) personalCount.intValue() * 4000L;
+                frequency = (int) Math.min(Integer.MAX_VALUE, Math.max(frequency, learnedFrequency));
+            }
+            if (frequency > 0) {
+                frequencies.put(candidate, Integer.valueOf(frequency));
+            }
+        }
+        if (personal != null) {
+            for (Map.Entry<String, Integer> entry : personal.entrySet()) {
+                String candidate = entry.getKey();
+                if (LiveCorrectionPolicy.oneEditApart(normalized, candidate)) {
+                    long learnedFrequency = (long) entry.getValue().intValue() * 4000L;
+                    int frequency = (int) Math.min(Integer.MAX_VALUE, learnedFrequency);
+                    Integer existing = frequencies.get(candidate);
+                    if (existing == null || frequency > existing.intValue()) {
+                        frequencies.put(candidate, Integer.valueOf(frequency));
+                    }
+                }
+            }
+        }
+        return LiveCorrectionPolicy.chooseCorrection(language, typed, knownWord, knownPrefix, frequencies);
+    }
+
     public synchronized boolean observeCompleted(String language, String previous, String word) {
         String lang = normalizeLanguage(language);
+        if (!"en".equals(lang) && !"ru".equals(lang)) {
+            return false;
+        }
         String current = normalizeWord(lang, word);
         if (lang == null || current == null) {
             return false;
@@ -307,8 +376,11 @@ public final class PredictionModel {
         return immutablePrefix(words, Math.max(1, Math.min(5, limit)));
     }
 
-    public synchronized void load() throws IOException {
-        File file = storageFile;
+    public void load() throws IOException {
+        File file;
+        synchronized (this) {
+            file = storageFile;
+        }
         if (file == null || !file.isFile() || file.length() <= 0 || file.length() > 2 * 1024 * 1024L) {
             return;
         }
@@ -368,12 +440,14 @@ public final class PredictionModel {
         } catch (RuntimeException exception) {
             throw new IOException("Invalid prediction model", exception);
         }
-        learned.clear();
-        learned.putAll(loadedWords);
-        nextWords.clear();
-        nextWords.putAll(loadedPairs);
-        totalBigrams = pairCount(loadedPairs);
-        revision++;
+        synchronized (this) {
+            learned.clear();
+            learned.putAll(loadedWords);
+            nextWords.clear();
+            nextWords.putAll(loadedPairs);
+            totalBigrams = pairCount(loadedPairs);
+            revision++;
+        }
     }
 
     public void save() throws IOException {
@@ -791,6 +865,15 @@ public final class PredictionModel {
         final Map<Integer, List<String>> byLength = new HashMap<Integer, List<String>>();
         final Map<String, List<String>> byFirstAndLength = new HashMap<String, List<String>>();
         final List<String> popular = new ArrayList<String>();
+        final List<String> alphabeticalWords = new ArrayList<String>();
+
+        boolean hasWordStartingWith(String prefix) {
+            int position = Collections.binarySearch(alphabeticalWords, prefix);
+            if (position < 0) {
+                position = -position - 1;
+            }
+            return position < alphabeticalWords.size() && alphabeticalWords.get(position).startsWith(prefix);
+        }
 
         List<String> prefixCandidates(String word) {
             String key = prefix(word, Math.min(PREFIX_DEPTH, codePointLength(word)));

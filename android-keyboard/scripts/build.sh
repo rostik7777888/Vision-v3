@@ -26,6 +26,6 @@ KEY="${TROST_KEYSTORE:-$ROOT/../.hoplite/android-tools/trost-development.jks}"
 if [[ ! -f "$KEY" ]]; then
     keytool -genkeypair -keystore "$KEY" -storepass android -keypass android -alias trost-dev -keyalg RSA -keysize 2048 -validity 3650 -dname 'CN=trost development' -noprompt
 fi
-"$TOOLS/apksigner" sign --ks "$KEY" --ks-key-alias trost-dev --ks-pass pass:android --key-pass pass:android --out "$OUT/trost-keyboard-1.9.2.apk" "$OUT/aligned.apk"
-"$TOOLS/apksigner" verify "$OUT/trost-keyboard-1.9.2.apk"
-echo "$OUT/trost-keyboard-1.9.2.apk"
+"$TOOLS/apksigner" sign --ks "$KEY" --ks-key-alias trost-dev --ks-pass pass:android --key-pass pass:android --out "$OUT/fishka-typing-1.9.3.apk" "$OUT/aligned.apk"
+"$TOOLS/apksigner" verify "$OUT/fishka-typing-1.9.3.apk"
+echo "$OUT/fishka-typing-1.9.3.apk"

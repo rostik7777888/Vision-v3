@@ -25,13 +25,22 @@ public final class PredictionModelTest {
         check("the".equals(model.correct("en", "teh", false)), "English typo correction");
         check("hello".equals(model.correct("en", "hlelo", false)), "transposition correction");
         check("привет".equals(model.correct("ru", "привт", false)), "Russian typo correction");
+        check("hello".equals(model.correct("en", "hlelo", true)), "live transposition correction");
+        check("привет".equals(model.correct("ru", "привт", true)), "live Russian correction");
+        check(model.correct("en", "hell", true) == null, "valid prefixes are not corrected midword");
+        check(model.correct("en", "hellp", true) == null, "ambiguous live corrections are left alone");
+        check(model.correct("en", "teh", true) == null, "short live words are left alone");
         check(model.correct("en", "hello", false) == null, "known words are unchanged");
         check(model.correct("en", "Hlelo", false) == null, "capitalized names are not rewritten");
         check(model.suggest("en", "hlelo", "", 3).contains("hello"), "transposition suggestion");
         check(model.suggest("en", "Ap", "", 3).contains("Apple"), "suggestion case is preserved");
 
+        check(model.correct("en", "quokak", true) == null, "unknown words need local evidence first");
         check(model.observeCompleted("en", "hello", "quokka"), "learn a local word");
+        check(model.correct("en", "quokak", true) == null, "one use is not enough to auto-correct");
         check(model.observeCompleted("en", "hello", "quokka"), "reinforce a local word");
+        check("quokka".equals(model.correct("en", "quokak", true)),
+                "repeated local words adapt live correction");
         check(model.contains("en", "quokka"), "learned word is recognized");
         check(model.suggest("en", "quo", "", 3).contains("quokka"), "learned prefix completion");
         check("quokka".equals(model.suggest("en", "", "hello", 3).get(0)),
@@ -60,6 +69,8 @@ public final class PredictionModelTest {
         check(!PredictionModel.isValidWord("en", "word@example.com"), "addresses are not words");
         check(!PredictionModel.isValidWord("en", "word\u0001"), "control characters are rejected");
         check(!model.observeCompleted("en", "", "猫"), "invalid input is not learned");
+        check(!model.observeCompleted("fr", "bonjour", "monde"),
+                "unsupported-language text is not personalized");
         check(model.suggest("en", "猫", "", 3).isEmpty(), "invalid-script queries are ignored");
         check(!model.suggest("fr", "ap", "", 3).contains("apple"),
                 "unsupported languages use no fabricated English words");
@@ -82,6 +93,9 @@ public final class PredictionModelTest {
         check(model.suggest("en", "hel", "", 3).contains("hello"), "bundled English prefix");
         check(model.suggest("ru", "прив", "", 3).contains("привет"), "bundled Russian prefix");
         check("hello".equals(model.correct("en", "hlelo", false)), "bundled English transposition");
+        check("hello".equals(model.correct("en", "hlelo", true)), "bundled live English transposition");
+        check("привет".equals(model.correct("ru", "привт", true)), "bundled live Russian typo");
+        check(model.correct("en", "hell", true) == null, "bundled valid prefix stays unchanged");
     }
 
     private static Map<String, Integer> readFrequencies(File file) throws Exception {

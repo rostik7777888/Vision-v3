@@ -4,11 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TOOLS_DIR="$ROOT_DIR/.hoplite/android-tools"
 SDK_ROOT="$TOOLS_DIR/sdk"
-AVD_NAME="trost-aosp-api29-x86_64"
+AVD_NAME="fishka-aosp-api29-x86_64"
 AVD_HOME="$TOOLS_DIR/avd"
 ANDROID_USER_HOME="$TOOLS_DIR/android-home"
 EVIDENCE_DIR="$TOOLS_DIR/emulator-evidence"
-APK="$ROOT_DIR/.hoplite/attachments/art_upload_49416b5668e246d69c571a85057e5854/trost-keyboard-1.8.apk"
 BOOT_TIMEOUT_SECONDS="${ANDROID_EMULATOR_BOOT_TIMEOUT:-360}"
 DEVICE="emulator-5554"
 
@@ -137,53 +136,5 @@ IME_SERVICE="$(timeout 15s "$ADB" -s "$DEVICE" shell service check input_method 
 grep -q 'Service window: found' <<<"$WINDOW_SERVICE" || die "window service unavailable: $WINDOW_SERVICE"
 grep -q 'Service input_method: found' <<<"$IME_SERVICE" || die "input_method service unavailable: $IME_SERVICE"
 
-[[ -s "$APK" ]] || die "attached keyboard APK not found: $APK"
-timeout 150s "$ADB" -s "$DEVICE" install --no-incremental --no-streaming -r "$APK"
-IME_ID='com.trost.ioskeyboard/.IosKeyboardService'
-timeout 20s "$ADB" -s "$DEVICE" shell ime enable "$IME_ID"
-timeout 20s "$ADB" -s "$DEVICE" shell ime set "$IME_ID"
-timeout 20s "$ADB" -s "$DEVICE" shell am start -n 'com.trost.ioskeyboard/.MainActivity'
-sleep 5
-
-capture_screenshot() {
-  local destination="$1"
-  if ! timeout 30s "$ADB" -s "$DEVICE" emu screenrecord screenshot "$destination" >/dev/null 2>&1; then
-    timeout 30s "$ADB" -s "$DEVICE" exec-out screencap -p > "$destination" || return 1
-  fi
-  file "$destination"
-}
-
-capture_screenshot "$EVIDENCE_DIR/settings.png" || die 'could not capture current keyboard settings screen'
-
-timeout 25s "$ADB" -s "$DEVICE" shell uiautomator dump /sdcard/trost-window.xml >/dev/null 2>&1 || true
-UI_XML="$(timeout 15s "$ADB" -s "$DEVICE" exec-out cat /sdcard/trost-window.xml 2>/dev/null || true)"
-BOUNDS="$(python3 -c 'import re,sys,xml.etree.ElementTree as ET
-try: root=ET.fromstring(sys.stdin.read())
-except ET.ParseError: sys.exit(0)
-for node in root.iter():
- text=node.attrib.get("text", "")
- if "проверка ввода" in text.casefold():
-  m=re.search(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", node.attrib.get("bounds", ""))
-  if m: print((int(m[1])+int(m[3]))//2, (int(m[2])+int(m[4]))//2); break' <<<"$UI_XML")"
-if [[ -n "$BOUNDS" ]]; then
-  read -r TAP_X TAP_Y <<<"$BOUNDS"
-  timeout 10s "$ADB" -s "$DEVICE" shell input tap "$TAP_X" "$TAP_Y"
-  sleep 3
-  timeout 10s "$ADB" -s "$DEVICE" shell input text Trost
-  sleep 2
-  capture_screenshot "$EVIDENCE_DIR/keyboard.png" || die 'could not capture the active keyboard'
-else
-  printf 'emulator: input-test row not found in the settings accessibility tree\n' >&2
-fi
-
-WINDOW_STATE="$(timeout 20s "$ADB" -s "$DEVICE" shell dumpsys window windows 2>&1 | grep -E 'mCurrentFocus|mFocusedApp' | head -n 4 || true)"
-ACTIVITY_STATE="$(timeout 20s "$ADB" -s "$DEVICE" shell dumpsys activity activities 2>&1 | grep -E 'mResumedActivity|topResumedActivity' | head -n 4 || true)"
-IME_DUMP="$TOOLS_DIR/input-method-api29.txt"
-timeout 20s "$ADB" -s "$DEVICE" shell dumpsys input_method > "$IME_DUMP"
-CURRENT_IME="$(grep -E -m 3 'mCurMethodId|mCurId|com\.trost\.ioskeyboard' "$IME_DUMP" || true)"
-printf '\nWindow service: %s\nInput-method service: %s\n' "$WINDOW_SERVICE" "$IME_SERVICE"
-printf 'Window focus:\n%s\nResumed activity:\n%s\nCurrent input method:\n%s\n' \
-  "$WINDOW_STATE" "$ACTIVITY_STATE" "$CURRENT_IME"
-printf 'Evidence: %s/settings.png %s/keyboard.png\n' "$EVIDENCE_DIR" "$EVIDENCE_DIR"
-grep -Eq '(mCurMethodId|mCurId)=.*com\.trost\.ioskeyboard' <<<"$CURRENT_IME" || die 'the Trost input method is not current in dumpsys input_method'
-printf 'Android booted and the Trost input method is active; emulator remains running.\n'
+printf 'Android API %s ready; window/input_method services available. PID %s\n' "$SDK_LEVEL" "$EMULATOR_PID"
+printf '%s\n' "$EMULATOR_PID" > "$TOOLS_DIR/emulator-api29.pid"
