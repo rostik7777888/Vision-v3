@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "languages": [
+    {"code":"ru","name":"Русский","rows":["йцукенгшщзхъ","фывапролджэ","ячсмитьбюё"]},
+    {"code":"en","name":"English","rows":["qwertyuiop","asdfghjkl","zxcvbnm"]},
+    {"code":"uk","name":"Українська","rows":["йцукенгшщзхї","фівапролджє","ячсмитьбюґ"]},
+    {"code":"kk","name":"Қазақша","rows":["йцукенгшщзхъқәі","фывапролджэғңө","ячсмитьбюёұүһ"]},
+    {"code":"ar","name":"العربية","rows":["ضصثقفغعهخحج","شسيبلاتنمكط","ءؤرىةوزظدذ"]},
+    {"code":"bg","name":"Български","rows":["явертъуиопч","асдфгхйклшщ","зьцжбнмю"]},
+    {"code":"el","name":"Ελληνικά","rows":["ςερτυθιοπ","ασδφγηξκλ","ζχψωβνμ"]},
+    {"code":"he","name":"עברית","rows":["קראטוןםפ","שדגכעיחלךף","זסבהנמצתץ"]},
+    {"code":"hy","name":"Հայերեն","rows":["էթփձջրչճժծքոե","ռտըւիօպասդֆգհյ","կլզղցվբնմխշև"]},
+    {"code":"ka","name":"ქართული","rows":["ჭღთქწერტყუი","ოპშჟასდფგჰჯ","კლძჩზხცვბნმ"]},
+    {"code":"de","name":"Deutsch","rows":["qwertzuiopü","asdfghjklöä","yxcvbnmß"]},
+    {"code":"es","name":"Español","rows":["qwertyuiop","asdfghjklñ","zxcvbnm"]},
+    {"code":"fr","name":"Français","rows":["azertyuiop","qsdfghjklm","wxcvbn"]},
+    {"code":"pt","name":"Português","rows":["qwertyuiop","asdfghjklç","zxcvbnm"]},
+    {"code":"tr","name":"Türkçe","rows":["qwertyuıopğü","asdfghjklşi","zxcvbnmöç"]}
+  ]
+}
