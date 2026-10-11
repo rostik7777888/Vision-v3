@@ -32,10 +32,26 @@ public final class LiveCorrectionPolicyTest {
         check(LiveCorrectionPolicy.chooseCorrection("en", "hellp", false, false,
                 candidates("hello", 500000, "helly", 200000)) == null,
                 "nearby candidate scores must be decisive");
+        check("hello".equals(LiveCorrectionPolicy.chooseCorrection("en", "hellp", false, false,
+                candidates("hello", 60000, "helly", 23000))),
+                "adjacent keyboard typo improves candidate ranking");
+        check(LiveCorrectionPolicy.chooseCorrection("en", "hellx", false, false,
+                candidates("hello", 60000, "helly", 23000)) == null,
+                "non-adjacent candidates keep the stricter confidence margin");
+        check(LiveCorrectionPolicy.chooseCorrection("en", "hellx", false, false,
+                candidates("hello", 60000, "helly", 23000), only("hello", 2)) == null,
+                "short context history does not weaken confidence");
+        check("hello".equals(LiveCorrectionPolicy.chooseCorrection("en", "hellx", false, false,
+                candidates("hello", 60000, "helly", 23000), only("hello", 3))),
+                "three repeated contextual observations can break a close tie");
         check(LiveCorrectionPolicy.chooseCorrection("en", "hellp", false, false,
                 only("hello", 7999)) == null, "low-frequency candidates are ignored");
         check(LiveCorrectionPolicy.oneEditApart("quokak", "quokka"), "one adjacent transposition");
         check(!LiveCorrectionPolicy.oneEditApart("hexxo", "hello"), "multiple edits are not accepted");
+        check(LiveCorrectionPolicy.hasKeyboardAdjacentSubstitution("hellp", "hello"),
+                "QWERTY neighbor is recognized");
+        check(!LiveCorrectionPolicy.hasKeyboardAdjacentSubstitution("привт", "привет"),
+                "insertions are not treated as adjacent-key substitutions");
         System.out.println("LiveCorrectionPolicyTest passed");
     }
 

@@ -1,6 +1,19 @@
-# fishka typing 1.9.3
+# fishka typing 1.9.4
 
 Быстрая Android-клавиатура с локальным персональным T9.
+
+## Исправление Backspace и проверка слов
+
+Найден и воспроизведён конкретный сбой после обучения нескольким словам:
+`ConcurrentModificationException` в подборе подсказок. Чтение частоты слова
+меняло порядок той же карты, которая в этот момент перебиралась. Теперь чтения
+не изменяют порядок; регрессия проверяет удаление префиксов и восстановление
+личного словаря после перезапуска. Ошибка фонового запроса также не завершает IME.
+
+Проверка опечаток остаётся локальной: словарная частота, соседние клавиши,
+перестановки букв и выученный контекст. Три повторных употребления сочетания
+дают контекстное подтверждение; неоднозначные варианты не подменяют текст
+автоматически. Это не гарантия безошибочной коррекции и не внешний онлайн-спеллер.
 
 ## Изменения
 
@@ -22,6 +35,22 @@
   Системная громкость мультимедиа, тихий режим и DND соблюдаются. Системный звуковой
   режим обновляется по событиям, а не проверяется через Binder на каждой букве.
 - Название приложения/IME: **fishka typing**. Карточка канала: **Telegram**.
+
+## Раскладки из интернета
+
+**Языки → Обновить из интернета** загружает небольшой проверяемый JSON-каталог
+через HTTPS, сохраняет последнюю рабочую версию и использует её без интернета.
+Источник — поддерживаемый каталог проекта на GitHub. При ошибке загрузки
+или неверном формате встроенные/сохранённые раскладки остаются доступными.
+
+У APK есть разрешение `INTERNET` только для каталога раскладок. Слова, сообщения,
+история буфера и персональный T9 на этот адрес не отправляются. Загрузки идут
+в фоне с ограничением размера, таймаутами и проверкой схемы, символов и хоста.
+Скачиваются данные раскладок, не программный код.
+
+Каталог сейчас содержит 15 проверенных раскладок; загрузка не превращает их
+в поддержку всех языков мира. Каталог можно обновлять новыми лицензированными
+раскладками без переписывания обработчика ввода.
 
 ## Языки
 
@@ -56,7 +85,7 @@ bash android-keyboard/scripts/build.sh
 
 JDK 17, Android SDK API 35 / Build Tools 35.0.0, APKtool 2.12.1, Python 3, zip/unzip.
 Инструменты устанавливаются в `.hoplite/android-tools`; разрешены `ANDROID_HOME`,
-`JAVA_HOME`, `TROST_KEYSTORE`. APK: `android-keyboard/build/fishka-typing-1.9.3.apk`.
+`JAVA_HOME`, `TROST_KEYSTORE`. APK: `android-keyboard/build/fishka-typing-1.9.4.apk`.
 
 Исходный пользовательский APK 1.8 в `vendor/` содержит Kotlin runtime, Canvas-клавиатуру
 и словари. Java-сервис/модели заменяют старые классы. Компиляционные `stubs/` в APK не
@@ -71,7 +100,7 @@ JDK 17, Android SDK API 35 / Build Tools 35.0.0, APKtool 2.12.1, Python 3, zip/u
 
 ```sh
 bash android-keyboard/scripts/emulator.sh
-adb install --no-incremental --no-streaming -r android-keyboard/build/fishka-typing-1.9.3.apk
+adb install --no-incremental --no-streaming -r android-keyboard/build/fishka-typing-1.9.4.apk
 adb shell am start -n com.trost.keyboard.restore/com.trost.ioskeyboard.MainActivity
 adb shell ime enable com.trost.keyboard.restore/com.trost.ioskeyboard.IosKeyboardService
 adb shell ime set com.trost.keyboard.restore/com.trost.ioskeyboard.IosKeyboardService

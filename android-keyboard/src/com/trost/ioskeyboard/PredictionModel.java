@@ -185,12 +185,15 @@ public final class PredictionModel {
         }
 
         if (result.size() < maximum && !contains(lang, normalizedPrefix)) {
-            int maxDistance = codePointLength(normalizedPrefix) >= 7 ? 2 : 1;
+        int maxDistance = codePointLength(normalizedPrefix) >= 7 ? 2 : 1;
             Map<String, Double> similar = new HashMap<String, Double>();
             for (String candidate : editCandidates(lang, normalizedPrefix)) {
                 int distance = editDistance(normalizedPrefix, candidate, maxDistance);
                 if (distance > 0 && distance <= maxDistance) {
-                    similar.put(candidate, score(lang, candidate) - (distance * 3.0d));
+                    double keyboardBonus = distance == 1
+                            && LiveCorrectionPolicy.hasKeyboardAdjacentSubstitution(normalizedPrefix, candidate)
+                            ? Math.log(2.0d) : 0.0d;
+                    similar.put(candidate, score(lang, candidate) - (distance * 3.0d) + keyboardBonus);
                 }
             }
             for (String candidate : ranked(similar)) {
@@ -211,7 +214,7 @@ public final class PredictionModel {
         }
         String normalized = normalizeWord(lang, word);
         if (live) {
-            return correctLive(lang, normalized, word);
+            return correctLive(lang, normalized, word, "");
         }
         if (normalized == null || codePointLength(normalized) < 3
                 || contains(lang, normalized)) {
@@ -251,7 +254,16 @@ public final class PredictionModel {
         return best.word;
     }
 
-    private String correctLive(String language, String normalized, String typed) {
+    public synchronized String checkedCorrect(String language, String prefix, String previous) {
+        String lang = normalizeLanguage(language);
+        if (lang == null || (!"ru".equals(lang) && !"en".equals(lang))
+                || prefix == null || !prefix.equals(prefix.toLowerCase(Locale.ROOT))) {
+            return null;
+        }
+        return correctLive(lang, normalizeWord(lang, prefix), prefix, previous);
+    }
+
+    private String correctLive(String language, String normalized, String typed, String previous) {
         if (normalized == null) {
             return null;
         }
@@ -299,14 +311,23 @@ public final class PredictionModel {
                 }
             }
         }
-        return LiveCorrectionPolicy.chooseCorrection(language, typed, knownWord, knownPrefix, frequencies);
+        Map<String, Integer> contextualCounts = new HashMap<String, Integer>();
+        String prior = normalizeWord(language, previous);
+        Map<String, Integer> following = prior == null ? null : nextWords.get(pairKey(language, prior));
+        if (following != null) {
+            for (String candidate : frequencies.keySet()) {
+                Integer count = following.get(candidate);
+                if (count != null) {
+                    contextualCounts.put(candidate, count);
+                }
+            }
+        }
+        return LiveCorrectionPolicy.chooseCorrection(language, typed, knownWord, knownPrefix,
+                frequencies, contextualCounts);
     }
 
     public synchronized boolean observeCompleted(String language, String previous, String word) {
         String lang = normalizeLanguage(language);
-        if (!"en".equals(lang) && !"ru".equals(lang)) {
-            return false;
-        }
         String current = normalizeWord(lang, word);
         if (lang == null || current == null) {
             return false;
@@ -316,7 +337,7 @@ public final class PredictionModel {
             if (learned.size() >= MAX_LANGUAGES) {
                 return false;
             }
-            words = new LinkedHashMap<String, Integer>(32, 0.75f, true);
+            words = new LinkedHashMap<String, Integer>(32, 0.75f, false);
             learned.put(lang, words);
         }
         Integer oldCount = words.get(current);
@@ -329,7 +350,7 @@ public final class PredictionModel {
         if (prior != null && !prior.equals(current)) {
             LinkedHashMap<String, Integer> following = nextWords.get(pairKey(lang, prior));
             if (following == null) {
-                following = new LinkedHashMap<String, Integer>(4, 0.75f, true);
+                following = new LinkedHashMap<String, Integer>(4, 0.75f, false);
                 nextWords.put(pairKey(lang, prior), following);
             }
             Integer oldPairCount = following.get(current);
@@ -409,7 +430,7 @@ public final class PredictionModel {
                     if (loadedWords.size() >= MAX_LANGUAGES) {
                         return;
                     }
-                    words = new LinkedHashMap<String, Integer>(32, 0.75f, true);
+                    words = new LinkedHashMap<String, Integer>(32, 0.75f, false);
                     loadedWords.put(lang, words);
                 }
                 if (words.size() < MAX_LEARNED_WORDS) {
@@ -430,7 +451,7 @@ public final class PredictionModel {
                 }
                 LinkedHashMap<String, Integer> following = loadedPairs.get(pairKey(lang, previous));
                 if (following == null) {
-                    following = new LinkedHashMap<String, Integer>(4, 0.75f, true);
+                    following = new LinkedHashMap<String, Integer>(4, 0.75f, false);
                     loadedPairs.put(pairKey(lang, previous), following);
                 }
                 following.put(next, Integer.valueOf(count));

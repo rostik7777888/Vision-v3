@@ -33,7 +33,7 @@ public final class IosKeyboardService extends InputMethodService {
         super.onCreate();AppPrefs.ensure(this);prefs=ThemeConfig.prefs(this);sounds=new KeySound(this);
         rankingThread=new HandlerThread("fishka-ranking",android.os.Process.THREAD_PRIORITY_BACKGROUND);
         rankingThread.start();ranking=new Handler(rankingThread.getLooper());
-        Lexicon.INSTANCE.load(getApplicationContext());
+        LanguagePackStore.load(this,null);Lexicon.INSTANCE.load(getApplicationContext());
     }
     @Override public View onCreateInputView() {
         keyboard=new TypingView(this);
@@ -231,8 +231,9 @@ public final class IosKeyboardService extends InputMethodService {
         final boolean correct=prefs.getBoolean("live_correction",true)&&!rejected.contains(words.prefix.toLowerCase(Locale.ROOT));
         if(rankTask!=null)ranking.removeCallbacks(rankTask);
         rankTask=()->{
+            try {
             List<String> suggestions=Lexicon.INSTANCE.suggest(expectedLanguage,words.prefix,words.previous);
-            String correction=correct?Lexicon.INSTANCE.liveCorrect(expectedLanguage,words.prefix):null;
+            String correction=correct?Lexicon.INSTANCE.checkedCorrect(expectedLanguage,words.prefix,words.previous):null;
             main.postDelayed(()->{
                 if(!active||privateEditor||!selectionCollapsed||session!=expectedSession||request!=expectedRequest||editor!=expectedEditor||selectionStart!=expectedSelection||!language.equals(expectedLanguage)||keyboard==null)return;
                 ContextWords current=readContext();if(current==null||!words.before.equals(current.before))return;
@@ -240,6 +241,10 @@ public final class IosKeyboardService extends InputMethodService {
                     applyCorrection(words,correction);
                 }else setSuggestions(suggestions);
             },correct?100:0);
+            } catch(RuntimeException error){
+                Log.e(TAG,"Prediction request failed",error);
+                main.post(()->{if(active&&session==expectedSession&&request==expectedRequest)setSuggestions(Collections.emptyList());});
+            }
         };
         ranking.post(rankTask);
     }

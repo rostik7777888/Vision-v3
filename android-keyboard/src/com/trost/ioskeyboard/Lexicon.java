@@ -156,6 +156,10 @@ public final class Lexicon {
         return model.correct(language, word, true);
     }
 
+    public String checkedCorrect(String language, String prefix, String previous) {
+        return model.checkedCorrect(language, prefix, previous);
+    }
+
     public List<String> suggest(String language, String prefix, String previous) {
         String lang = language == null ? "" : language;
         String typed = prefix == null ? "" : prefix;

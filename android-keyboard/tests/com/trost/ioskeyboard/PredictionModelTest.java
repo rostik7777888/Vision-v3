@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,20 @@ public final class PredictionModelTest {
     }
 
     public static void main(String[] args) throws Exception {
+        PredictionModel deletionRegression=new PredictionModel();
+        for(String word:new String[]{"hello","help","helicopter"})deletionRegression.observeCompleted("en","say",word);
+        for(int round=0;round<20;round++){
+            for(String prefix:new String[]{"hel","he","h","he","hel"}){
+                List<String> suggestions=deletionRegression.suggest("en",prefix,"say",3);
+                check(!suggestions.isEmpty(),"learned-prefix deletion must not crash or lose suggestions");
+            }
+        }
+        File regressionFile=File.createTempFile("fishka-deletion-regression",".bin");
+        try{
+            deletionRegression.setStorageFile(regressionFile);deletionRegression.save();
+            PredictionModel reopened=new PredictionModel(regressionFile);reopened.load();
+            check(!reopened.suggest("en","he","say",3).isEmpty(),"restored learned-prefix map must not mutate during scoring");
+        }finally{regressionFile.delete();}
         PredictionModel model = seededModel();
 
         List<String> englishPrefix = model.suggest("en", "ap", "", 3);
@@ -32,8 +48,44 @@ public final class PredictionModelTest {
         check(model.correct("en", "teh", true) == null, "short live words are left alone");
         check(model.correct("en", "hello", false) == null, "known words are unchanged");
         check(model.correct("en", "Hlelo", false) == null, "capitalized names are not rewritten");
+        check(model.suggest("en", "hellp", "", 3).indexOf("hello")
+                        < model.suggest("en", "hellp", "", 3).indexOf("helly"),
+                "adjacent keyboard typo ranks above a similarly frequent candidate");
         check(model.suggest("en", "hlelo", "", 3).contains("hello"), "transposition suggestion");
         check(model.suggest("en", "Ap", "", 3).contains("Apple"), "suggestion case is preserved");
+        check(model.checkedCorrect("en", "hell", "meeting") == null,
+                "context-aware correction preserves a valid prefix");
+
+        PredictionModel contextModel = seededModel();
+        check(contextModel.checkedCorrect("en", "hellp", "meeting") == null,
+                "context is not guessed before it is learned");
+        contextModel.observeCompleted("en", "meeting", "hello");
+        contextModel.observeCompleted("en", "meeting", "hello");
+        check(contextModel.checkedCorrect("en", "hellp", "meeting") == null,
+                "two observations are insufficient for contextual rewriting");
+        contextModel.observeCompleted("en", "meeting", "hello");
+        check("hello".equals(contextModel.checkedCorrect("en", "hellp", "meeting")),
+                "three repeated bigrams personalize a close correction");
+
+        PredictionModel longTypoModel = new PredictionModel();
+        Map<String, Integer> longWord = new LinkedHashMap<String, Integer>();
+        longWord.put("goodbye", 100000);
+        longTypoModel.setDictionary("en", longWord);
+        check(longTypoModel.suggest("en", "gppdbye", "", 3).contains("goodbye"),
+                "two-error long word remains available as a suggestion");
+        check(longTypoModel.correct("en", "gppdbye", true) == null,
+                "two-error words are suggested, not rewritten live");
+
+        Map<String, List<String>> adapterDictionary = new LinkedHashMap<String, List<String>>();
+        List<String> adapterWords = new ArrayList<String>();
+        adapterWords.add("hello");
+        for (int i = 1; i < 8000; i++) {
+            adapterWords.add("invalid" + i);
+        }
+        adapterDictionary.put("en", adapterWords);
+        Lexicon.INSTANCE.install$app_debug(adapterDictionary);
+        check("hello".equals(Lexicon.INSTANCE.checkedCorrect("en", "hlelo", "")),
+                "Lexicon exposes offline contextual correction to the service");
 
         check(model.correct("en", "quokak", true) == null, "unknown words need local evidence first");
         check(model.observeCompleted("en", "hello", "quokka"), "learn a local word");
@@ -45,6 +97,13 @@ public final class PredictionModelTest {
         check(model.suggest("en", "quo", "", 3).contains("quokka"), "learned prefix completion");
         check("quokka".equals(model.suggest("en", "", "hello", 3).get(0)),
                 "learned bigram ranks first");
+        check(model.checkedCorrect("en", "hellp", "meeting") == null,
+                "unseen context does not alter correction");
+        model.observeCompleted("en", "meeting", "hello");
+        model.observeCompleted("en", "meeting", "hello");
+        model.observeCompleted("en", "meeting", "hello");
+        check("hello".equals(model.checkedCorrect("en", "hellp", "meeting")),
+                "learned context influences only a plausible typo");
 
         File file = File.createTempFile("trost-prediction-test", ".bin");
         try {
@@ -57,6 +116,8 @@ public final class PredictionModelTest {
             check(restored.contains("en", "quokka"), "learned word survives serialization");
             check("quokka".equals(restored.suggest("en", "", "hello", 3).get(0)),
                     "learned context survives serialization");
+            check("hello".equals(restored.checkedCorrect("en", "hellp", "meeting")),
+                    "contextual correction evidence survives serialization");
         } finally {
             file.delete();
             new File(file.getPath() + ".tmp").delete();
@@ -69,8 +130,11 @@ public final class PredictionModelTest {
         check(!PredictionModel.isValidWord("en", "word@example.com"), "addresses are not words");
         check(!PredictionModel.isValidWord("en", "word\u0001"), "control characters are rejected");
         check(!model.observeCompleted("en", "", "猫"), "invalid input is not learned");
-        check(!model.observeCompleted("fr", "bonjour", "monde"),
-                "unsupported-language text is not personalized");
+        check(model.observeCompleted("fr", "bonjour", "monde"),
+                "languages without a bundled corpus still learn the user's own words");
+        check(model.suggest("fr","mon","bonjour",3).contains("monde"),"downloadable-language words are suggested from local evidence");
+        check(model.observeCompleted("kk","сәлем","әлем"),"Kazakh personal words are learned");
+        check(model.suggest("kk","ә","сәлем",3).contains("әлем"),"Kazakh learning never falls back to English");
         check(model.suggest("en", "猫", "", 3).isEmpty(), "invalid-script queries are ignored");
         check(!model.suggest("fr", "ap", "", 3).contains("apple"),
                 "unsupported languages use no fabricated English words");
@@ -127,6 +191,7 @@ public final class PredictionModelTest {
         words.put("ten", 100000);
         words.put("tea", 90000);
         words.put("hello", 500000);
+        words.put("helly", 450000);
         words.put("help", 150000);
         words.put("apple", 400000);
         words.put("apply", 300000);

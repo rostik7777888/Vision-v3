@@ -26,6 +26,11 @@ public final class VerificationRunner extends Instrumentation {
             screenshot("theme-selection.png");click("Тема: Неон");waitForIdleSync();
             verifyPressAnimation();
             click("Языки");waitForIdleSync();
+            click("Обновить из интернета");
+            long downloadDeadline=android.os.SystemClock.uptimeMillis()+15000;
+            while(android.os.SystemClock.uptimeMillis()<downloadDeadline&&!contains("Раскладки обновлены"))Thread.sleep(100);
+            screenshot("downloaded-layouts.png");
+            check(contains("Раскладки обновлены"),"Internet layout refresh failed: "+visibleTexts());
             runOnMainSync(()->{
                 android.widget.EditText search=(android.widget.EditText)findType(activity.getWindow().getDecorView(),android.widget.EditText.class);
                 check(search!=null,"Language search missing");search.setText("Қазақ");
@@ -59,7 +64,7 @@ public final class VerificationRunner extends Instrumentation {
             });
             waitForIdleSync();screenshot("kazakh-keyboard.png");
             verifyTyping(context);
-            result.putString("result","Settings, animated theme selection, original keyboard, rapid native typing, live correction/undo and browser typing passed");
+            result.putString("result","Settings, animated theme selection, original keyboard, rapid native typing, live correction/undo, rapid/held/multi-touch Backspace and browser typing passed");
             result.putString("evidence",evidence.getAbsolutePath());finish(Activity.RESULT_OK,result);
         } catch(Throwable error){result.putString("error",error.toString());finish(Activity.RESULT_CANCELED,result);}
     }
@@ -123,6 +128,7 @@ public final class VerificationRunner extends Instrumentation {
         key(automation,keyboard,"back");Thread.sleep(100);
         check(editorText(automation).endsWith("wrold"),"Backspace did not undo live correction");
         check(keyboardBounds(automation)!=null,"Undo hid the IME");
+        verifyDeletion(automation,keyboard,engine,lexicon);
         captureDevice(automation,"native-typing.png");
         android.view.accessibility.AccessibilityNodeInfo clear=findNode(automation.getRootInActiveWindow(),"Clear field");
         check(clear!=null&&clear.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK),"Clear fixture missing");
@@ -135,8 +141,9 @@ public final class VerificationRunner extends Instrumentation {
         check(protectedField!=null&&protectedField.isPassword(),"Password session did not activate");
         String privateText=editorText(automation);
         check(privateText.isEmpty()||"Native typing field".equals(privateText),"A stale correction edited the new password session");
-        android.view.accessibility.AccessibilityNodeInfo browser=findNode(automation.getRootInActiveWindow(),"Browser typing field");
-        check(browser!=null&&browser.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK),"Browser fixture button missing");
+        android.view.accessibility.AccessibilityNodeInfo browser=waitForNode(automation,"Browser typing field");
+        check(browser!=null,"Browser fixture button missing");
+        browser.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK);
         long pageLoaded=android.os.SystemClock.uptimeMillis()+10000;
         android.view.accessibility.AccessibilityNodeInfo field=null;
         while(android.os.SystemClock.uptimeMillis()<pageLoaded){field=findEditable(automation.getRootInActiveWindow());if(field!=null)break;Thread.sleep(100);}
@@ -150,6 +157,51 @@ public final class VerificationRunner extends Instrumentation {
         check(keyboardBounds(automation)!=null,"IME hid itself while typing in browser");
         check(editorText(automation).contains("hello world hello world"),"Browser typing lost characters");
         captureDevice(automation,"browser-typing.png");
+    }
+    private void verifyDeletion(android.app.UiAutomation automation,android.graphics.Rect bounds,Object engine,Class<?> lexicon) throws Exception {
+        for(String word:new String[]{"hello","help","helicopter"})
+            lexicon.getMethod("learn",String.class,String.class,String.class).invoke(engine,"en","say",word);
+        android.view.accessibility.AccessibilityNodeInfo field=findEditable(automation.getRootInActiveWindow());
+        check(field!=null,"Deletion editor missing");
+        Bundle text=new Bundle();text.putCharSequence(android.view.accessibility.AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,"");
+        check(field.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_SET_TEXT,text),"Could not reset deletion field");
+        type(automation,bounds,"hel");key(automation,bounds,"back");Thread.sleep(300);
+        check("he".equals(editorText(automation)),"Learned-prefix Backspace crashed or corrupted input: "+editorText(automation));
+        for(int round=0;round<5;round++){
+            type(automation,bounds,"typing");
+            for(int i=0;i<6;i++)key(automation,bounds,"back");
+        }
+        check("he".equals(editorText(automation)),"Rapid repeated deletion lost text");
+        multiTouchDelete(automation,bounds);
+        check("he".equals(editorText(automation)),"Overlapping letter/Backspace touches corrupted text");
+        type(automation,bounds,"abcdefghijklmnopqrstuv");
+        int before=editorText(automation).length();
+        float density=getTargetContext().getResources().getDisplayMetrics().density;
+        float x=bounds.left+bounds.width()*.94f,y=bounds.top+(48+2.5f*60)*density;
+        long now=android.os.SystemClock.uptimeMillis();
+        android.view.MotionEvent down=android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,x,y,0);
+        down.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);automation.injectInputEvent(down,true);down.recycle();
+        Thread.sleep(750);
+        android.view.MotionEvent up=android.view.MotionEvent.obtain(now,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0);
+        up.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);automation.injectInputEvent(up,true);up.recycle();
+        check(editorText(automation).length()<before-2,"Backspace hold did not repeat");
+        check(keyboardBounds(automation)!=null,"Deletion closed the IME");
+        captureDevice(automation,"rapid-backspace.png");
+    }
+    private void multiTouchDelete(android.app.UiAutomation automation,android.graphics.Rect bounds) throws Exception {
+        float density=getTargetContext().getResources().getDisplayMetrics().density,width=bounds.width()-6*density;
+        android.view.MotionEvent.PointerProperties[] properties=new android.view.MotionEvent.PointerProperties[2];
+        android.view.MotionEvent.PointerCoords[] points=new android.view.MotionEvent.PointerCoords[2];
+        for(int i=0;i<2;i++){properties[i]=new android.view.MotionEvent.PointerProperties();properties[i].id=i;properties[i].toolType=android.view.MotionEvent.TOOL_TYPE_FINGER;points[i]=new android.view.MotionEvent.PointerCoords();points[i].pressure=1;points[i].size=1;}
+        points[0].x=bounds.left+3*density+(.5f/10f)*width;points[0].y=bounds.top+(48+.5f*60)*density;
+        points[1].x=bounds.left+width*.94f;points[1].y=bounds.top+(48+2.5f*60)*density;
+        long now=android.os.SystemClock.uptimeMillis();
+        int[] actions={android.view.MotionEvent.ACTION_DOWN,android.view.MotionEvent.ACTION_POINTER_DOWN|(1<<android.view.MotionEvent.ACTION_POINTER_INDEX_SHIFT),android.view.MotionEvent.ACTION_POINTER_UP|(1<<android.view.MotionEvent.ACTION_POINTER_INDEX_SHIFT),android.view.MotionEvent.ACTION_UP};
+        for(int step=0;step<actions.length;step++){
+            int count=step==0||step==3?1:2;
+            android.view.MotionEvent event=android.view.MotionEvent.obtain(now,now+step*15,actions[step],count,properties,points,0,0,1,1,0,0,android.view.InputDevice.SOURCE_TOUCHSCREEN,0);
+            try{check(automation.injectInputEvent(event,true),"Multi-touch deletion injection failed");}finally{event.recycle();}
+        }
     }
     private android.graphics.Rect keyboardBounds(android.app.UiAutomation automation) {
         android.graphics.Point viewport=new android.graphics.Point();
@@ -196,6 +248,17 @@ public final class VerificationRunner extends Instrumentation {
         if(node==null)return null;if(node.isEditable())return node;
         for(int i=0;i<node.getChildCount();i++){android.view.accessibility.AccessibilityNodeInfo result=findEditable(node.getChild(i));if(result!=null)return result;}return null;
     }
+    private android.view.accessibility.AccessibilityNodeInfo waitForNode(android.app.UiAutomation automation,String label) throws InterruptedException {
+        long deadline=android.os.SystemClock.uptimeMillis()+5000;
+        while(android.os.SystemClock.uptimeMillis()<deadline){
+            for(android.view.accessibility.AccessibilityWindowInfo window:automation.getWindows()){
+                if(window.getType()==android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION){
+                    android.view.accessibility.AccessibilityNodeInfo node=findNode(window.getRoot(),label);if(node!=null)return node;
+                }
+            }
+            Thread.sleep(100);
+        }return null;
+    }
     private android.view.accessibility.AccessibilityNodeInfo findNode(android.view.accessibility.AccessibilityNodeInfo node,String label){
         if(node==null)return null;if(label.equalsIgnoreCase(node.getText()==null?"":node.getText().toString()))return node;
         for(int i=0;i<node.getChildCount();i++){android.view.accessibility.AccessibilityNodeInfo result=findNode(node.getChild(i),label);if(result!=null)return result;}return null;
@@ -204,6 +267,9 @@ public final class VerificationRunner extends Instrumentation {
         Bitmap bitmap=automation.takeScreenshot();check(bitmap!=null,"Device screenshot failed");
         try(FileOutputStream out=new FileOutputStream(new File(evidence,name))){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);}finally{bitmap.recycle();}
     }
+    private String visibleTexts(){StringBuilder result=new StringBuilder();runOnMainSync(()->appendTexts(activity.getWindow().getDecorView(),result));return result.toString();}
+    private void appendTexts(View view,StringBuilder into){if(view instanceof TextView)into.append(((TextView)view).getText()).append(" | ");if(view instanceof ViewGroup){ViewGroup group=(ViewGroup)view;for(int i=0;i<group.getChildCount();i++)appendTexts(group.getChildAt(i),into);}}
+    private boolean contains(String label){final boolean[] value={false};runOnMainSync(()->value[0]=find(activity.getWindow().getDecorView(),label)!=null);return value[0];}
     private void checkAbsent(String label){runOnMainSync(()->check(find(activity.getWindow().getDecorView(),label)==null,"Unexpected control: "+label));}
     private void click(String label){
         runOnMainSync(()->{View v=find(activity.getWindow().getDecorView(),label);check(v!=null,"Missing control: "+label);check(v.performClick(),"Control not clickable: "+label);});

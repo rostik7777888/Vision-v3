@@ -1,32 +1,43 @@
-# fishka typing 1.9.3 — verification
+# fishka typing 1.9.4 — verification
 
-Confirmed checks:
+## Backspace crash
 
-- APK build succeeds; `apksigner verify` passes. Package ID and signing certificate
-  match 1.9.2, so this build can update it without an uninstall.
-- Original Canvas drawing/measurement and the B toolbar rendering are checked
-  during packaging. The unsafe legacy IME service is replaced with a Java service.
-- Unit checks pass for clipboard history, adaptive predictions, conservative live
-  correction, and all 15 native layouts, including the 42-letter Kazakh alphabet.
-- Seven audio checks pass against the supplied MP3. The original extracted click
-  remains in the APK; runtime gain is fixed at 50%, with system mute/DND respected.
-- Settings show fishka typing, only View/Input tabs, no feedback controls/footer,
-  five themes and Telegram. Native instrumentation checks theme persistence,
-  press animation and Kazakh selection; fresh screenshots are inspected.
-- The full native instrumentation run passes on Android 10 AOSP: rapid EditText
-  typing without IME dismissal, correction before space, Backspace undo, switching
-  into a password field with no stale edit, and continued WebView typing. No
-  AndroidRuntime/FishkaIME errors were observed in the checked log. Output is retained
-  in `.hoplite/android-tools/fishka-ui.log` and captures in `build/evidence/`.
+The unmodified 1.9.3 model was reproduced with three learned words (`hello`,
+`help`, `helicopter`) and the query `he`. It threw ConcurrentModificationException
+in PredictionModel.suggest: score() read an access-ordered LinkedHashMap while
+that same map was being iterated. The corrected model uses insertion ordering
+for words/bigrams, including restored personal data. The same reproduction now
+returns suggestions successfully. Repeated prefix deletion and restored-data
+regression tests pass. This is a confirmed crash mechanism, not only a hypothesis.
 
-Limits:
+## Checks
 
-- The original phone crash stack trace was not supplied. The old unguarded
-  connection callbacks were identified as risks, not a proven phone-specific cause.
-- The Android fixture uses synthetic EditText and WebView fields, not the live
-  monkeytype.com website. No claim of cross-device or benchmark-wide reliability.
-- Software emulator audio output is disabled; audible playback on the user's phone
-  is not verified. The supplied sample's bytes and playback configuration are checked.
-- This release supports 15 real layouts, not every world language or a CJK conversion
-  IME. Russian/English have bundled correction dictionaries; other layouts use
-  personal learned words for suggestions.
+- Unit checks cover RU/EN spelling/prefixes/transpositions, context after repeated
+  bigrams, long typo suggestions, preservation of valid words/prefixes, personal
+  words in languages without a bundled corpus, and serialized learning.
+- Full bundled Russian and English corpora are loaded in the model tests.
+- Language-pack tests reject malformed JSON/UTF-8, oversize packs, duplicate codes,
+  control/bidi characters and invalid rows; invalid updates preserve the last cache.
+- The published HTTPS catalog responds successfully and matches the shipped data.
+  Android refresh/cache behavior is included in the native UI test.
+- APK compilation and signature verification pass; the signer/package are retained
+  for an update over 1.9.3. Original MP3 sample bytes are unchanged.
+- Android instrumentation checks real native/WebView typing, live correction/undo,
+  learned-prefix deletion, repeated Backspace, holding deletion, overlapping
+  letter/delete touches, protected-field transitions, settings and Internet refresh.
+  The final combined run passed (`INSTRUMENTATION_CODE: -1`), including HTTPS
+  refresh, rapid/held/multi-touch Backspace and browser input, with no
+  FishkaIME/AndroidRuntime errors in the captured final log. Result is retained
+  in `.hoplite/android-tools/fishka-ui.log` and screenshots
+  in `android-keyboard/build/evidence/fishka-1.9.4/`.
+
+## Limits
+
+The phone's original crash log was not supplied, so this cannot prove that every
+possible phone-specific issue is eliminated. Correction is deliberately
+conservative rather than guaranteed perfect. Downloading language layouts does
+not provide correction dictionaries for every language: full dictionaries remain
+Russian/English, while other supported languages use personal word suggestions.
+There is no external online spelling service and no transmission of typed text.
+Emulator audio output is disabled; audible playback on the phone is not verified.
+The browser fixture is synthetic WebView, not the live monkeytype.com website.

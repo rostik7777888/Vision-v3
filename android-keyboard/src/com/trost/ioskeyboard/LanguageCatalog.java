@@ -4,21 +4,28 @@ import android.content.Context;
 import java.util.*;
 
 public final class LanguageCatalog {
-    private static String active = "ru";
-    private static final Map<String, String[]> EXTRA_ROWS = new HashMap<>();
-    private static final List<String> CYCLE_ORDER = Collections.unmodifiableList(Arrays.asList(
-            "ru", "en", "uk", "kk", "de", "es", "fr", "pt", "tr", "ar", "bg", "el", "he", "hy", "ka"));
+    private static volatile String active = "ru";
+    private static final Map<String, String[]> EXTRA_ROWS;
+    private static volatile Map<String, LanguagePackData.Entry> remote = Collections.emptyMap();
     private static final List<String> DEFAULT_LANGUAGES = Collections.unmodifiableList(Arrays.asList("ru", "en"));
 
     static {
-        EXTRA_ROWS.put("de", new String[]{"qwertzuiopü", "asdfghjklöä", "yxcvbnmß"});
-        EXTRA_ROWS.put("fr", new String[]{"azertyuiop", "qsdfghjklm", "wxcvbn"});
-        EXTRA_ROWS.put("es", new String[]{"qwertyuiop", "asdfghjklñ", "zxcvbnm"});
-        EXTRA_ROWS.put("pt", new String[]{"qwertyuiop", "asdfghjklç", "zxcvbnm"});
-        EXTRA_ROWS.put("tr", new String[]{"qwertyuıopğü", "asdfghjklşi", "zxcvbnmöç"});
+        Map<String, String[]> rows = new HashMap<>();
+        rows.put("de", new String[]{"qwertzuiopü", "asdfghjklöä", "yxcvbnmß"});
+        rows.put("fr", new String[]{"azertyuiop", "qsdfghjklm", "wxcvbn"});
+        rows.put("es", new String[]{"qwertyuiop", "asdfghjklñ", "zxcvbnm"});
+        rows.put("pt", new String[]{"qwertyuiop", "asdfghjklç", "zxcvbnm"});
+        rows.put("tr", new String[]{"qwertyuıopğü", "asdfghjklşi", "zxcvbnmöç"});
+        EXTRA_ROWS = Collections.unmodifiableMap(rows);
     }
 
     private LanguageCatalog() {
+    }
+
+    public static void installRemote(LanguagePackData pack) {
+        Map<String, LanguagePackData.Entry> installed = new LinkedHashMap<>();
+        if (pack != null) installed.putAll(pack.languages());
+        remote = Collections.unmodifiableMap(installed);
     }
 
     public static void use(String language) {
@@ -39,19 +46,24 @@ public final class LanguageCatalog {
     }
 
     public static String[] rows(String language) {
-        String[] rows = KeyboardLayoutData.rows(language);
+        String code = normalize(language);
+        LanguagePackData.Entry downloaded = remote.get(code);
+        if (downloaded != null) return downloaded.rows();
+        String[] rows = KeyboardLayoutData.rows(code);
         if (rows != null) return rows;
-        rows = EXTRA_ROWS.get(normalize(language));
+        rows = EXTRA_ROWS.get(code);
         return rows == null ? null : rows.clone();
     }
 
     public static boolean supported(String language) {
         String code = normalize(language);
-        return KeyboardLayoutData.supports(code) || EXTRA_ROWS.containsKey(code);
+        return remote.containsKey(code) || KeyboardLayoutData.supports(code) || EXTRA_ROWS.containsKey(code);
     }
 
     public static String name(String code) {
         String normalized = normalize(code);
+        LanguagePackData.Entry downloaded = remote.get(normalized);
+        if (downloaded != null) return downloaded.name();
         switch (normalized) {
             case "ar": return "العربية";
             case "bg": return "Български";
@@ -89,9 +101,10 @@ public final class LanguageCatalog {
     }
 
     static String next(String current, Collection<String> selected) {
+        List<String> order = all();
         List<String> languages = new ArrayList<>();
         if (selected != null) {
-            for (String code : CYCLE_ORDER) {
+            for (String code : order) {
                 for (String chosen : selected) {
                     if (code.equals(normalize(chosen))) {
                         languages.add(code);
@@ -106,13 +119,20 @@ public final class LanguageCatalog {
     }
 
     public static List<String> all() {
-        List<String> codes = new ArrayList<>(CYCLE_ORDER.subList(DEFAULT_LANGUAGES.size(), CYCLE_ORDER.size()));
-        Collections.sort(codes, (a, b) -> {
+        Set<String> available = new HashSet<>(KeyboardLayoutData.languages());
+        available.addAll(EXTRA_ROWS.keySet());
+        available.addAll(remote.keySet());
+        available.remove("ru");
+        available.remove("en");
+        List<String> rest = new ArrayList<>(available);
+        Collections.sort(rest, (a, b) -> {
             int nameOrder = name(a).compareToIgnoreCase(name(b));
             return nameOrder == 0 ? a.compareTo(b) : nameOrder;
         });
-        codes.add(0, "en");
-        codes.add(0, "ru");
+        List<String> codes = new ArrayList<>(rest.size() + 2);
+        codes.add("ru");
+        codes.add("en");
+        codes.addAll(rest);
         return Collections.unmodifiableList(codes);
     }
 

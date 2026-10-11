@@ -28,7 +28,7 @@ public final class MainActivity extends Activity {
     private LinearLayout row(){LinearLayout l=new LinearLayout(this);l.setGravity(Gravity.CENTER_VERTICAL);return l;}
     private LinearLayout.LayoutParams lp(int w,int h){return new LinearLayout.LayoutParams(w<0?w:dp(w),h<0?h:dp(h));}
     private void add(LinearLayout into,View v,int gap){LinearLayout.LayoutParams p=lp(-1,-2);p.topMargin=dp(gap);into.addView(v,p);}
-    @Override public void onCreate(Bundle state){super.onCreate(state);AppPrefs.ensure(this);prefs=ThemeConfig.prefs(this);Lexicon.INSTANCE.load(getApplicationContext());if(state!=null)tab=state.getInt("tab")==1?1:0;show(0);}
+    @Override public void onCreate(Bundle state){super.onCreate(state);AppPrefs.ensure(this);prefs=ThemeConfig.prefs(this);LanguagePackStore.load(this,null);Lexicon.INSTANCE.load(getApplicationContext());if(state!=null)tab=state.getInt("tab")==1?1:0;show(0);}
     @Override protected void onSaveInstanceState(Bundle out){super.onSaveInstanceState(out);out.putInt("tab",tab);}
     @Override public void onResume(){super.onResume();updateStatus();}
     private boolean enabled(){for(InputMethodInfo i:((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).getEnabledInputMethodList())if(getPackageName().equals(i.getPackageName()))return true;return false;}
@@ -170,7 +170,18 @@ public final class MainActivity extends Activity {
             adapter.notifyDataSetChanged();
         };
         search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){filter.accept(s.toString());}public void afterTextChanged(Editable e){}});
+        TextView downloadStatus=text("Раскладки сохраняются на устройстве. Текст набора не отправляется.",11,Neon.MUTED,false);
+        add(page,downloadStatus,10);
+        View refresh=action("globe","Обновить из интернета",false,()->{
+            downloadStatus.setText("Загрузка раскладок…");
+            LanguagePackStore.refresh(this,(success,message)->{
+                if(isFinishing()||isDestroyed())return;
+                downloadStatus.setText(message);filter.accept(search.getText().toString());
+            });
+        });
+        add(page,refresh,9);
         filter.accept("");setPage(page);page.setFocusableInTouchMode(true);page.requestFocus();
+        LanguagePackStore.load(this,(success,message)->{if(!isFinishing()&&!isDestroyed()&&languagesOpen)filter.accept(search.getText().toString());});
     }
     @Override public void onBackPressed(){if(languagesOpen){show(0);return;}super.onBackPressed();}
 }

@@ -70,12 +70,12 @@ for notice in (root/'assets').glob('*'):
     if notice.is_file():shutil.copy2(notice,base/'assets'/notice.name)
 
 ns='http://schemas.android.com/apk/res/android';ET.register_namespace('android',ns)
-manifest=ET.parse(base/'AndroidManifest.xml');m=manifest.getroot();m.set('package','com.trost.keyboard.restore');m.set('{'+ns+'}versionCode','14');m.set('{'+ns+'}versionName','1.9.3')
-for perm in list(m.findall('uses-permission')):
-    if perm.get('{'+ns+'}name')=='android.permission.INTERNET':m.remove(perm)
+manifest=ET.parse(base/'AndroidManifest.xml');m=manifest.getroot();m.set('package','com.trost.keyboard.restore');m.set('{'+ns+'}versionCode','15');m.set('{'+ns+'}versionName','1.9.4')
+if not any(perm.get('{'+ns+'}name')=='android.permission.INTERNET' for perm in m.findall('uses-permission')):
+    ET.SubElement(m,'uses-permission',{'{'+ns+'}name':'android.permission.INTERNET'})
 m.find('application').set('{'+ns+'}label','fishka typing')
 manifest.write(base/'AndroidManifest.xml',encoding='utf-8',xml_declaration=True)
-yml=(base/'apktool.yml').read_text().replace('versionCode: 10','versionCode: 14').replace('versionName: 1.8','versionName: 1.9.3');(base/'apktool.yml').write_text(yml)
+yml=(base/'apktool.yml').read_text().replace('versionCode: 10','versionCode: 15').replace('versionName: 1.8','versionName: 1.9.4');(base/'apktool.yml').write_text(yml)
 strings=ET.parse(base/'res/values/strings.xml')
 for string in strings.getroot():
     if string.get('name') in ('app_name','keyboard_name'):string.text='fishka typing'

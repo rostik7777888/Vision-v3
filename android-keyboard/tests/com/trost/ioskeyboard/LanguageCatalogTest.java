@@ -17,6 +17,7 @@ public final class LanguageCatalogTest {
         checkKazakh();
         checkCompleteScriptLayouts();
         checkSwitching();
+        checkRemotePack();
         System.out.println("LanguageCatalogTest passed");
     }
 
@@ -82,6 +83,20 @@ public final class LanguageCatalogTest {
         LanguageCatalog.use("zh");
         check(LanguageCatalog.row(SOURCE_ROWS[0]).equals(LanguageCatalog.rows("ru")[0]),
                 "unsupported active language fails safe");
+    }
+
+    private static void checkRemotePack() {
+        LanguagePackData pack = LanguagePackData.parse("{\"version\":1,\"languages\":["
+                + "{\"code\":\"mi\",\"name\":\"Te reo Māori\",\"rows\":[\"abcdefghijkl\",\"mnopqrstuv\",\"wxyz\"]}]}");
+        LanguageCatalog.installRemote(pack);
+        check(LanguageCatalog.supported("mi"), "downloaded layouts become supported atomically");
+        check(LanguageCatalog.name("mi").equals("Te reo Māori"), "downloaded native language name is used");
+        check(LanguageCatalog.rows("mi")[0].equals("abcdefghijkl"), "downloaded rows are used");
+        check(LanguageCatalog.all().containsAll(Arrays.asList("mi", "ru", "en")), "remote and offline catalogs are merged");
+        check("mi".equals(LanguageCatalog.next("ru", Arrays.asList("ru", "mi"))), "remote languages join language switching");
+        check(!LanguageCatalog.supported("zh"), "uninstalled languages stay unsupported");
+        LanguageCatalog.installRemote(null);
+        check(!LanguageCatalog.supported("mi"), "clearing a remote snapshot restores the offline catalog");
     }
 
     private static String flatten(String code) {
