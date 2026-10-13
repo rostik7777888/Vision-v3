@@ -1,0 +1,1790 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Название проекта: замените «RP Portal» здесь, в og:title и в CONFIG внизу файла -->
+<title>RP Portal — ролевой портал</title>
+<meta name="description" content="Регистрация персонажей, соцсеть, жалобы, черный рынок и IRP-лист — всё в одном месте.">
+<meta name="theme-color" content="#07080b">
+<meta name="color-scheme" content="dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="RP Portal — ролевой портал">
+<meta property="og:description" content="Регистрация персонажей, соцсеть, жалобы, черный рынок и IRP-лист — всё в одном месте.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f6dc8e'/%3E%3Cstop offset='1' stop-color='%23b88424'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23g)'/%3E%3Ctext x='32' y='41' font-family='Arial,sans-serif' font-weight='800' font-size='24' text-anchor='middle' fill='%231b1505'%3ERP%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#07080b;--surface:#111318;--surface-2:#15181e;--surface-3:#1b1f27;--field:#0c0e12;
+  --border:rgba(255,255,255,.07);--border-2:rgba(255,255,255,.11);--border-3:rgba(255,255,255,.2);
+  --text:#f2f3f5;--text-2:#a4a9b4;--text-3:#6d727e;
+  --gold:#e3b341;--gold-hi:#f4d27a;--amber:#eea53b;--green:#4ade80;--red:#f87171;
+  --ease:cubic-bezier(.22,.8,.24,1);
+  --font:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --display:"Unbounded","Manrope",system-ui,sans-serif;
+  --page-w:1080px;--gutter:20px;
+}
+@media(min-width:640px){:root{--gutter:24px}}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg);color-scheme:dark;scrollbar-gutter:stable;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html:has(dialog[open]){overflow:hidden}
+body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;font:500 15px/1.5 var(--font);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;-webkit-tap-highlight-color:transparent}
+main{flex:1;display:block;padding-bottom:72px}
+main:focus{outline:none}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button,input,textarea,select{font:inherit;color:inherit;letter-spacing:inherit}
+button{margin:0;padding:0;border:0;background:none;cursor:pointer;text-align:inherit}
+h1,h2,h3,h4,p{margin:0}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+::selection{background:rgba(227,179,65,.32);color:#fff}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{width:100%;max-width:calc(var(--page-w) + var(--gutter) * 2);margin-inline:auto;padding-inline:var(--gutter)}
+.muted{color:var(--text-3)}
+.stack{display:grid;gap:12px}
+@media(max-width:480px){.hide-sm{display:none}}
+
+/* фон */
+.ambient{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.ambient::before{content:"";position:absolute;left:50%;top:-42vh;width:min(1300px,170vw);height:85vh;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(227,179,65,.15),rgba(227,179,65,.05) 50%,transparent)}
+.ambient::after{content:"";position:absolute;inset:0;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* шапка */
+.topbar{position:sticky;top:0;z-index:50;view-transition-name:topbar;background:rgba(8,9,12,.76);-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);border-bottom:1px solid var(--border);transition:background-color .35s,border-color .35s}
+html[data-route=home] .topbar:not(.is-scrolled){background-color:transparent;border-bottom-color:transparent;-webkit-backdrop-filter:none;backdrop-filter:none}
+.topbar__inner{display:flex;align-items:center;gap:14px;min-height:76px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:12px}
+.topbar__spacer{flex:1}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand__mark{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#f6dc8e,#d9a73a 55%,#b88424);color:#1b1505;font:700 13px/1 var(--display);letter-spacing:.02em;box-shadow:0 8px 26px -8px rgba(227,179,65,.65),inset 0 1px 0 rgba(255,255,255,.45)}
+.brand__mark--sm{width:28px;height:28px;border-radius:9px;font-size:9.5px;box-shadow:none}
+.brand__text{display:grid;gap:4px;min-width:0}
+.brand__name{font:600 15px/1.1 var(--display);letter-spacing:.01em;white-space:nowrap}
+.brand__sub{font-size:12.5px;line-height:1;color:var(--text-3);white-space:nowrap}
+.icon-btn{display:grid;place-items:center;flex:none;width:46px;height:46px;border-radius:13px;border:1px solid var(--border-2);background:rgba(255,255,255,.02);color:var(--text-2);transition:background-color .25s,border-color .25s,color .25s,transform .25s var(--ease)}
+.icon-btn:hover{color:var(--text);border-color:var(--border-3);background:rgba(255,255,255,.05)}
+.icon-btn:active{transform:scale(.93)}
+.icon-btn--sm{width:36px;height:36px;border-radius:11px}
+.icon-btn--sm .i{width:17px;height:17px}
+.crumb{flex:1;min-width:0}
+.crumb__kicker{margin-bottom:8px;font:600 11px/1 var(--display);letter-spacing:.3em;text-transform:uppercase;color:var(--text-3)}
+.crumb__title{font:600 17px/1.2 var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-chip{display:flex;align-items:center;gap:10px;flex:none;max-width:230px;padding:4px 14px 4px 4px;border-radius:999px;border:1px solid var(--border-2);background:rgba(255,255,255,.02);color:var(--text-2);font-size:14px;font-weight:600;transition:background-color .25s,border-color .25s,color .25s}
+.user-chip:hover{color:var(--text);border-color:var(--border-3);background:rgba(255,255,255,.05)}
+.user-chip__name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:560px){.user-chip{padding:4px}.user-chip__name{display:none}.crumb__title{font-size:15.5px}.brand__sub{display:none}}
+
+/* аватары */
+.avatar{--s:40px;--h:40;position:relative;display:grid;place-items:center;flex:none;width:var(--s);height:var(--s);border-radius:50%;overflow:hidden;background:linear-gradient(135deg,hsl(var(--h) 70% 70%),hsl(calc(var(--h) + 45) 55% 42%));color:#0d0e12;font:700 calc(var(--s) * .34)/1 var(--display);letter-spacing:.02em;user-select:none}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar--guest{background:var(--surface-3);color:var(--text-3);border:1px solid var(--border-2)}
+.avatar--guest .i{width:55%;height:55%}
+
+/* главная */
+.hero{position:relative;padding-top:40px}
+.hero::before{content:"";position:absolute;z-index:-1;inset:-90px 0 -30px;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:46px 46px;background-position:center top;-webkit-mask-image:radial-gradient(ellipse 65% 75% at 50% 0%,#000 25%,transparent 72%);mask-image:radial-gradient(ellipse 65% 75% at 50% 0%,#000 25%,transparent 72%);pointer-events:none}
+.hero__grid{display:grid;gap:44px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px 0 11px;border-radius:999px;border:1px solid rgba(227,179,65,.28);background:rgba(227,179,65,.07);color:var(--gold-hi);font-size:13px;font-weight:700}
+.eyebrow .i{width:16px;height:16px}
+.hero__title{margin:22px 0 18px;font:600 clamp(31px,7.4vw,58px)/1.07 var(--display);letter-spacing:-.025em;text-wrap:balance}
+.hero__title em{font-style:normal;background:linear-gradient(95deg,#f9e5a8,#e8bb4c 50%,#c58d27);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero__text{max-width:50ch;color:var(--text-2);font-size:clamp(15px,1.7vw,17px);line-height:1.65}
+.hero__actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+@media(max-width:560px){.hero__actions .btn{flex:1 1 auto}}
+@media(min-width:920px){.hero{padding-top:76px}.hero__grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:64px}}
+
+.idcard{position:relative;display:block;width:100%;max-width:460px;justify-self:center;border-radius:26px;padding:1px;background:linear-gradient(135deg,rgba(244,210,122,.75),rgba(244,210,122,.1) 32%,rgba(255,255,255,.06) 62%,rgba(244,210,122,.5));box-shadow:0 50px 100px -45px rgba(227,179,65,.5),0 30px 60px -30px rgba(0,0,0,.9);transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .6s var(--ease),box-shadow .4s}
+@media(hover:hover){.idcard:hover{box-shadow:0 60px 120px -45px rgba(227,179,65,.65),0 30px 60px -30px rgba(0,0,0,.9)}}
+.idcard__inner{position:relative;display:flex;flex-direction:column;gap:18px;min-height:250px;padding:22px;border-radius:25px;overflow:hidden;background:radial-gradient(120% 90% at 100% 0%,rgba(227,179,65,.16),transparent 55%),repeating-radial-gradient(circle at 0 100%,rgba(255,255,255,.028) 0 1px,transparent 1px 8px),linear-gradient(160deg,#171a21,#0d0f14)}
+.idcard__inner::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,236,190,.09) 46%,rgba(170,200,255,.07) 53%,transparent 64%);background-size:260% 100%;background-position:var(--sx,30%) 0;transition:background-position .6s var(--ease)}
+.idcard__top{display:flex;justify-content:space-between;gap:12px;font:600 10.5px/1 var(--display);letter-spacing:.22em;text-transform:uppercase;color:rgba(244,210,122,.9)}
+.idcard__no{color:var(--text-3);letter-spacing:.12em}
+.idcard__main{display:flex;align-items:center;gap:18px;flex:1}
+.idcard__photo{display:grid;place-items:center;flex:none;width:30%;max-width:132px;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,#1f232c,#13151b);border:1px solid rgba(255,255,255,.08);color:var(--text-3)}
+.idcard__photo img{width:100%;height:100%;object-fit:cover}
+.idcard__photo .i{width:42%;height:42%;stroke-width:1.5}
+.idcard__fields{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:14px 18px}
+.idcard__f{display:block;min-width:0}
+.idcard__f small{display:block;margin-bottom:5px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3)}
+.idcard__f b{display:block;font-size:14.5px;font-weight:700;white-space:nowrap}
+.idcard__f--wide{grid-column:1/-1}
+.idcard__f--wide b{font:600 clamp(16px,2.4vw,19px)/1.25 var(--display);overflow:hidden;text-overflow:ellipsis}
+.idcard__bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.idcard__code{width:92px;height:24px;opacity:.45;background:repeating-linear-gradient(90deg,#d9dce2 0 2px,transparent 2px 4px,#d9dce2 4px 5px,transparent 5px 8px,#d9dce2 8px 11px,transparent 11px 12px,#d9dce2 12px 13px,transparent 13px 16px)}
+
+.label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:40px 0 14px;font:700 12px/1.2 var(--font);letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.sections{display:grid;gap:12px}
+@media(min-width:860px){.sections{grid-template-columns:1fr 1fr;gap:14px}.sections .sec:first-child{grid-column:1/-1}.sections .sec:first-child .sec__desc{white-space:normal}}
+.sec{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;gap:18px;padding:20px 22px;border-radius:22px;border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.022),transparent),var(--surface);transition:transform .45s var(--ease),border-color .3s}
+.sec::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(227,179,65,.11),transparent 45%);opacity:0;transition:opacity .4s}
+.sec:hover{border-color:rgba(227,179,65,.28)}
+.sec:hover::before{opacity:1}
+@media(hover:hover){.sec:hover{transform:translateY(-2px)}}
+.sec:active{transform:scale(.985)}
+.sec__icon{display:grid;place-items:center;flex:none;width:52px;height:52px;border-radius:15px;color:var(--gold);background:linear-gradient(160deg,rgba(227,179,65,.24),rgba(227,179,65,.07)),var(--surface);border:1px solid rgba(227,179,65,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 10px 30px -12px rgba(227,179,65,.45)}
+.sec__icon .i{width:24px;height:24px}
+.sec__body{flex:1;min-width:0;display:grid;gap:5px}
+.sec__title{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;font-size:17.5px;font-weight:600;line-height:1.3}
+.sec__desc{color:var(--text-3);font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec__go{flex:none;color:var(--text-3);transition:transform .4s var(--ease),color .3s}
+.sec:hover .sec__go{color:var(--gold);transform:translate(3px,-3px)}
+@media(max-width:520px){.sec{padding:16px;gap:14px;border-radius:20px}.sec__icon{width:46px;height:46px;border-radius:13px}.sec__icon .i{width:22px;height:22px}.sec__title{font-size:16px}.sec__desc{font-size:13.5px}}
+
+/* бейджи и статусы */
+.pill{display:inline-flex;align-items:center;gap:6px;flex:none;height:26px;padding:0 10px;border-radius:999px;border:1px solid var(--border-2);font-size:12.5px;font-weight:600;line-height:1;color:var(--text-2);white-space:nowrap}
+.pill .i{width:14px;height:14px}
+.pill--amber{color:var(--amber);border-color:rgba(238,165,59,.32);background:rgba(238,165,59,.08)}
+.pill--green{color:var(--green);border-color:rgba(74,222,128,.3);background:rgba(74,222,128,.07)}
+.pill--red{color:var(--red);border-color:rgba(248,113,113,.32);background:rgba(248,113,113,.08)}
+.pill--gold{color:var(--gold-hi);border-color:rgba(227,179,65,.32);background:rgba(227,179,65,.08)}
+.pill--muted{color:var(--text-3)}
+.pill--warn{color:#fde047;border-color:rgba(250,204,21,.3);background:rgba(250,204,21,.07)}
+.pill--mute{color:#93c5fd;border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.08)}
+.pill--jail{color:#fdba74;border-color:rgba(251,146,60,.32);background:rgba(251,146,60,.08)}
+.pill--ban{color:#fca5a5;border-color:rgba(248,113,113,.34);background:rgba(248,113,113,.09)}
+.pill--perm{color:#e9d5ff;border-color:rgba(192,132,252,.4);background:rgba(192,132,252,.12)}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--text-2)}
+.status .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.status .i{width:16px;height:16px}
+.status--amber{color:var(--amber)}
+.status--amber .dot{animation:ping 2s ease-out infinite}
+.status--green{color:var(--green)}
+.status--red{color:var(--red)}
+.status--muted{color:var(--text-3)}
+.status--gold{color:var(--gold-hi)}
+
+/* страницы разделов */
+.intro{display:flex;align-items:center;gap:16px;padding-top:28px}
+.intro .sec__icon{width:58px;height:58px;border-radius:17px}
+.intro .sec__icon .i{width:26px;height:26px}
+.intro__desc{color:var(--text-2);font-size:15.5px;font-weight:600;line-height:1.45}
+.intro__meta{margin-top:3px;color:var(--text-3);font-size:13.5px}
+.card{border:1px solid var(--border);border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.022),transparent 60%),var(--surface)}
+.empty{grid-column:1/-1;display:grid;justify-items:center;gap:8px;padding:44px 20px;border-radius:20px;border:1px dashed var(--border-2);text-align:center;color:var(--text-3)}
+.empty__icon{display:grid;place-items:center;width:56px;height:56px;margin-bottom:6px;border-radius:17px;border:1px solid var(--border-2);background:var(--surface);color:var(--text-2)}
+.empty b{color:var(--text);font-size:16px}
+.empty p{max-width:38ch;font-size:14px}
+.empty .btn{margin-top:10px}
+
+/* формы */
+.form{display:grid;gap:22px}
+.form .label{margin:16px 0 -8px}
+.form .label:first-child{margin-top:28px}
+.form--sheet{gap:18px}
+.field{display:grid;gap:10px;min-width:0}
+.field__label{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:15px;font-weight:700;color:var(--text)}
+.field__hint{font-size:13px;font-weight:500;color:var(--text-3);transition:color .3s}
+.field__hint.is-ok{color:var(--green)}
+.field__note{min-height:20px;font-size:13.5px;color:var(--text-3)}
+.field__error{display:none;font-size:13px;font-weight:600;color:var(--red)}
+.field.is-invalid>.field__error{display:block;animation:fade-in .25s ease}
+.input{display:block;width:100%;height:54px;padding:0 16px;border-radius:13px;border:1px solid var(--border-2);background:var(--field);color:var(--text);font-size:16px;font-weight:500;outline:none;transition:border-color .2s,box-shadow .2s,background-color .2s;-webkit-appearance:none;appearance:none}
+.input::placeholder{color:#575c67;opacity:1}
+.input:hover{border-color:rgba(255,255,255,.17)}
+.input:focus{border-color:rgba(227,179,65,.6);box-shadow:0 0 0 4px rgba(227,179,65,.12);background:#0e1015}
+textarea.input{height:auto;min-height:160px;padding:14px 16px;line-height:1.55;resize:vertical}
+.field.is-invalid .input{border-color:rgba(248,113,113,.6);box-shadow:0 0 0 4px rgba(248,113,113,.1)}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=search]::-webkit-search-decoration{-webkit-appearance:none}
+.row2{display:grid;gap:22px}
+@media(min-width:560px){.row2{grid-template-columns:1fr 1fr;gap:14px}}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+
+.drop{position:relative;display:grid;place-items:center;min-height:220px;padding:28px 20px;border-radius:18px;border:1.5px dashed rgba(255,255,255,.14);background:rgba(255,255,255,.012);text-align:center;cursor:pointer;overflow:hidden;isolation:isolate;transition:border-color .25s,background-color .25s,box-shadow .25s,min-height .45s var(--ease)}
+.drop:hover,.drop.is-over{border-color:rgba(227,179,65,.55);background:rgba(227,179,65,.045)}
+.drop:focus-within{border-color:rgba(227,179,65,.6);box-shadow:0 0 0 4px rgba(227,179,65,.12)}
+.field.is-invalid .drop{border-color:rgba(248,113,113,.55)}
+.drop__empty{display:grid;justify-items:center;gap:6px;transition:opacity .25s}
+.drop__icon{display:grid;place-items:center;width:58px;height:58px;margin-bottom:12px;border-radius:17px;border:1px solid var(--border-2);background:var(--surface);color:var(--text-2);transition:transform .4s var(--ease),color .25s,border-color .25s}
+.drop:hover .drop__icon{transform:translateY(-3px);color:var(--gold);border-color:rgba(227,179,65,.4)}
+.drop__title{font-size:16px;font-weight:600;color:var(--text-2)}
+.drop__sub{font-size:13px;color:var(--text-3)}
+.drop__bg,.drop__img,.drop__bar,.drop__busy{display:none}
+.drop__bg{position:absolute;inset:-20px;z-index:-1;width:calc(100% + 40px);height:calc(100% + 40px);max-width:none;object-fit:cover;filter:blur(24px) brightness(.45) saturate(1.2)}
+.drop__img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:14px 14px 66px}
+.drop__bar{position:absolute;left:0;right:0;bottom:14px;justify-content:center;gap:8px}
+.drop__busy{position:absolute;inset:0;place-items:center;background:rgba(7,8,11,.6)}
+.drop.has-image{min-height:300px;border-style:solid;border-color:var(--border-2)}
+.drop.has-image .drop__empty{opacity:0}
+.drop.has-image .drop__bg,.drop.has-image .drop__img{display:block}
+.drop.has-image .drop__bar{display:flex}
+.drop.is-busy .drop__busy{display:grid}
+.drop--sm{min-height:150px}
+.drop--sm.has-image{min-height:230px}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--gold);border-right-color:transparent;animation:spin .7s linear infinite}
+
+/* кнопки */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:10px;height:50px;padding:0 22px;border-radius:14px;border:1px solid transparent;font-size:15.5px;font-weight:700;line-height:1;white-space:nowrap;user-select:none;transition:transform .25s var(--ease),box-shadow .3s,background-color .25s,border-color .25s,color .25s,opacity .25s}
+.btn .i{width:19px;height:19px}
+.btn:active{transform:scale(.975)}
+.btn:disabled{cursor:not-allowed}
+.btn:disabled:not(.is-loading){opacity:.45}
+.btn--gold{color:#17120a;background:linear-gradient(180deg,#f1ca63,#dfae41);border-color:rgba(255,231,160,.35);box-shadow:0 12px 34px -12px rgba(227,179,65,.75),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn--gold:hover:not(:disabled){box-shadow:0 16px 44px -12px rgba(227,179,65,.95),inset 0 1px 0 rgba(255,255,255,.5);transform:translateY(-1px)}
+.btn--gold:active:not(:disabled){transform:scale(.975)}
+.btn--ghost{color:var(--text);border-color:var(--border-2);background:rgba(255,255,255,.03)}
+.btn--ghost:hover{border-color:var(--border-3);background:rgba(255,255,255,.06)}
+.btn--danger{color:#fca5a5;border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.08)}
+.btn--danger:hover{background:rgba(248,113,113,.14);border-color:rgba(248,113,113,.45)}
+.btn--glass{color:#fff;border-color:rgba(255,255,255,.16);background:rgba(10,11,14,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.btn--glass:hover{background:rgba(20,22,28,.85)}
+.btn--text{height:44px;padding:0 12px;color:var(--text-3);font-size:14px;font-weight:600}
+.btn--text:hover{color:var(--red)}
+.btn--sm{height:40px;padding:0 15px;border-radius:12px;font-size:14px;gap:8px}
+.btn--sm .i{width:17px;height:17px}
+.btn--block{width:100%;height:58px;border-radius:15px;font-size:16px}
+.btn.is-loading{color:transparent!important}
+.btn.is-loading::after{content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;border-radius:50%;border:2.5px solid #17120a;border-right-color:transparent;animation:spin .7s linear infinite}
+.shake{animation:shake .45s ease}
+
+/* регистрация */
+.app{display:flex;align-items:center;gap:20px;width:100%;padding:20px;text-align:left;transition:border-color .3s}
+.app:hover{border-color:var(--border-2)}
+.app__photo{flex:none;width:84px;height:84px;border-radius:14px;object-fit:cover;background:var(--surface-3);border:1px solid var(--border)}
+.app__body{display:grid;gap:6px;min-width:0}
+.app__name{font:600 19px/1.25 var(--display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app__meta{color:var(--text-3);font-size:14.5px}
+.notice{margin-top:24px;padding:20px 22px;border-radius:18px;border:1px solid rgba(238,165,59,.3);background:linear-gradient(180deg,rgba(238,165,59,.1),rgba(238,165,59,.05));color:#f1ad4e;font-size:15.5px;line-height:1.6}
+.row-start{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.dossier{display:flex;align-items:center;gap:18px}
+.dossier__photo{flex:none;width:112px;aspect-ratio:3/4;border-radius:16px;object-fit:cover;border:1px solid var(--border-2);background:var(--surface-3)}
+.dossier__name{margin:8px 0 6px;font:600 20px/1.25 var(--display)}
+.dossier__date{margin-top:8px;font-size:13px;color:var(--text-3)}
+.dossier__bio{color:var(--text-2);line-height:1.65;white-space:pre-wrap;word-break:break-word}
+
+/* соцсеть */
+.members{display:flex;gap:16px;overflow-x:auto;margin-inline:calc(var(--gutter) * -1);padding:4px var(--gutter) 8px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-inline:var(--gutter)}
+.members::-webkit-scrollbar{display:none}
+.member{display:grid;justify-items:center;gap:8px;flex:none;width:74px;scroll-snap-align:start;font-size:12.5px;font-weight:600;color:var(--text-2);text-align:center;transition:color .25s}
+.member:hover{color:var(--text)}
+.member .avatar{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px rgba(227,179,65,.55);transition:transform .35s var(--ease)}
+.member:hover .avatar{transform:translateY(-2px)}
+.member--add .avatar{box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--border-2)}
+.member__name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composer{margin-top:26px;padding:16px 16px 12px;border-radius:22px}
+.composer__row{display:flex;align-items:flex-start;gap:12px}
+.composer textarea{flex:1;min-width:0;min-height:42px;max-height:320px;padding:9px 0;border:0;outline:none;background:transparent;resize:none;font-size:16px;line-height:1.5;color:var(--text)}
+.composer textarea::placeholder{color:var(--text-3)}
+.composer__preview{position:relative;width:fit-content;max-width:min(100%,340px);margin:10px 0 0 52px;border-radius:14px;overflow:hidden;border:1px solid var(--border-2)}
+.composer__preview img{max-height:260px;object-fit:cover}
+.composer__rm{position:absolute;top:8px;right:8px;display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:rgba(7,8,11,.7);color:#fff}
+.composer__rm .i{width:16px;height:16px}
+.composer__bar{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.composer__hint{flex:1;font-size:13px;color:var(--text-3)}
+.tool{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;border-radius:12px;color:var(--text-2);font-size:14px;font-weight:600;cursor:pointer;transition:background-color .25s,color .25s}
+.tool:hover,.tool:focus-within{background:rgba(255,255,255,.05);color:var(--text)}
+.feed{display:grid;gap:12px}
+.post{padding:18px 18px 10px}
+.post__head{display:flex;align-items:center;gap:12px}
+.post__who{flex:1;min-width:0;display:grid;gap:2px}
+.post__author{width:fit-content;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;transition:color .2s}
+.post__author:hover{color:var(--gold-hi)}
+.post__time{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--text-3)}
+.post__text{margin-top:12px;color:#d8dbe1;font-size:15.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.post__media{display:block;width:100%;margin-top:12px;border-radius:16px;overflow:hidden;border:1px solid var(--border);cursor:zoom-in}
+.post__media img{width:100%;max-height:520px;object-fit:cover;transition:transform .6s var(--ease)}
+.post__media:hover img{transform:scale(1.02)}
+.post__foot{display:flex;gap:6px;margin-top:8px}
+.like{display:inline-flex;align-items:center;gap:8px;height:38px;margin-left:-8px;padding:0 12px;border-radius:12px;color:var(--text-3);font-size:14px;font-weight:700;transition:background-color .25s,color .25s}
+.like:hover{background:rgba(255,255,255,.04);color:var(--text-2)}
+.like .i{transition:fill .25s}
+.like[aria-pressed=true]{color:#fb7185}
+.like[aria-pressed=true] .i{fill:currentColor}
+.like.pop .i{animation:pop .5s var(--ease)}
+.profile{margin-top:26px;overflow:hidden;border-radius:24px}
+.profile__cover{height:130px;background:radial-gradient(70% 140% at 15% 0%,hsl(var(--h) 70% 55% / .5),transparent 60%),radial-gradient(60% 120% at 95% 0%,rgba(227,179,65,.32),transparent 60%),linear-gradient(180deg,#1b1e26,#121419)}
+.profile__body{margin-top:-48px;padding:0 22px 22px}
+.profile__body>.avatar{box-shadow:0 0 0 5px var(--surface)}
+.profile__name{margin-top:14px;font:600 22px/1.25 var(--display)}
+.profile__handle{margin-top:4px;color:var(--text-3);font-size:14px}
+.profile__bio{margin-top:12px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.stats{display:flex;gap:30px;margin-top:18px}
+.stat b{display:block;font:600 20px/1.2 var(--display)}
+.stat span{font-size:13px;color:var(--text-3)}
+
+/* жалобы */
+.seg{position:relative;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;margin-top:26px;padding:4px;border-radius:15px;border:1px solid var(--border);background:var(--surface)}
+.seg__thumb{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--n,2));border-radius:11px;border:1px solid var(--border-2);background:var(--surface-3);box-shadow:0 6px 20px -8px rgba(0,0,0,.6);transform:translateX(calc(var(--idx,0) * 100%));transition:transform .5s var(--ease)}
+.seg button{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:11px;color:var(--text-3);font-size:14.5px;font-weight:700;transition:color .3s}
+.seg button[aria-selected=true]{color:var(--text)}
+.count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:rgba(227,179,65,.15);color:var(--gold-hi);font-size:12px;font-weight:800}
+.pane-in-l{animation:slide-in-l .45s var(--ease) both}
+.pane-in-r{animation:slide-in-r .45s var(--ease) both}
+.chips{display:flex;gap:8px;overflow-x:auto;margin-top:14px;margin-inline:calc(var(--gutter) * -1);padding:2px var(--gutter) 4px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips--wrap{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+.chip{display:inline-flex;align-items:center;gap:7px;flex:none;height:38px;padding:0 15px;border-radius:999px;border:1px solid var(--border-2);background:rgba(255,255,255,.02);color:var(--text-2);font-size:14px;font-weight:700;transition:background-color .25s,border-color .25s,color .25s,transform .2s var(--ease)}
+.chip .i{width:16px;height:16px}
+.chip:hover{color:var(--text);border-color:var(--border-3)}
+.chip:active{transform:scale(.96)}
+.chip[aria-pressed=true],.chip[aria-checked=true]{color:#17120a;border-color:transparent;background:linear-gradient(180deg,#f1ca63,#dfae41);box-shadow:0 8px 22px -10px rgba(227,179,65,.8)}
+.field.is-invalid .chip{border-color:rgba(248,113,113,.4)}
+.links{display:grid;gap:8px}
+.link-row{position:relative;display:flex;align-items:center;gap:8px}
+.link-row>.i{position:absolute;left:16px;width:18px;height:18px;color:var(--text-3);pointer-events:none}
+.link-row .input{padding-left:46px}
+.add-link{display:inline-flex;align-items:center;gap:8px;width:fit-content;height:36px;color:var(--gold-hi);font-size:14px;font-weight:700;transition:color .2s}
+.add-link .i{width:17px;height:17px}
+.add-link:hover{color:#fff}
+.shots{display:flex;flex-wrap:wrap;gap:10px}
+.shot{position:relative;display:block;width:104px;height:78px;border-radius:13px;overflow:hidden;border:1px solid var(--border-2);background:var(--surface)}
+.shot img{width:100%;height:100%;object-fit:cover}
+.shot__rm{position:absolute;top:5px;right:5px;display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:rgba(7,8,11,.72);color:#fff}
+.shot__rm .i{width:15px;height:15px}
+.shot--add{display:grid;place-items:center;align-content:center;gap:4px;border-style:dashed;color:var(--text-3);font-size:12px;font-weight:700;cursor:pointer;transition:border-color .25s,color .25s}
+.shot--add:hover,.shot--add:focus-within{border-color:rgba(227,179,65,.5);color:var(--gold-hi)}
+.complaint{display:grid;gap:12px;padding:18px 20px}
+.complaint__top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.complaint__id{font:600 11.5px/1 var(--display);letter-spacing:.1em;color:var(--text-3)}
+.complaint__title{font-size:16.5px;font-weight:600;color:var(--text-2)}
+.complaint__title b{color:var(--text);font-weight:800}
+.complaint__meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;color:var(--text-3);font-size:13.5px}
+.complaint__meta>span:not(.pill){display:inline-flex;align-items:center;gap:6px}
+.complaint__meta .i{width:15px;height:15px}
+.complaint__text{color:var(--text-2);font-size:14.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.evidence{display:flex;flex-wrap:wrap;gap:8px}
+.ev{display:inline-flex;align-items:center;gap:7px;max-width:100%;height:34px;padding:0 12px;border-radius:11px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text-2);font-size:13px;font-weight:600;transition:border-color .25s,color .25s}
+.ev:hover{border-color:rgba(227,179,65,.4);color:var(--gold-hi)}
+.ev .i{width:15px;height:15px}
+.ev span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev--img{width:52px;padding:0;overflow:hidden;cursor:zoom-in}
+.ev--img img{width:100%;height:100%;object-fit:cover}
+.complaint__foot{display:flex;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--border)}
+
+/* черный рынок */
+.toolbar{display:flex;gap:10px;margin-top:26px}
+.search{position:relative;flex:1;min-width:0}
+.search>.i{position:absolute;left:16px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--text-3);pointer-events:none}
+.search .input{height:50px;padding-left:46px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:18px}
+.lot{display:flex;flex-direction:column;width:100%;overflow:hidden;text-align:left;transition:transform .45s var(--ease),border-color .3s}
+@media(hover:hover){.lot:hover{transform:translateY(-3px);border-color:rgba(227,179,65,.28)}}
+.lot:active{transform:scale(.985)}
+.lot__media{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:16/10;overflow:hidden;color:rgba(227,179,65,.8);background:radial-gradient(80% 100% at 25% 15%,rgba(227,179,65,.17),transparent 60%),repeating-linear-gradient(135deg,rgba(255,255,255,.028) 0 2px,transparent 2px 12px),linear-gradient(160deg,#191c23,#0e1014)}
+.lot__media>.i{width:44px;height:44px;stroke-width:1.5;filter:drop-shadow(0 8px 24px rgba(227,179,65,.45));transition:transform .6s var(--ease)}
+.lot__media>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
+@media(hover:hover){.lot:hover .lot__media>img,.lot:hover .lot__media>.i{transform:scale(1.06)}}
+.lot__cat{position:absolute;left:12px;top:12px;background:rgba(7,8,11,.62);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.lot__body{display:grid;gap:6px;padding:16px 18px 18px}
+.lot__title{font-size:16px;font-weight:700;line-height:1.35}
+.lot__price{font:600 18px/1.2 var(--display);color:var(--gold-hi)}
+.lot__desc{color:var(--text-3);font-size:14px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lot__foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;padding-top:12px;border-top:1px solid var(--border);color:var(--text-3);font-size:13px}
+.lot__seller{display:inline-flex;align-items:center;gap:8px;min-width:0;color:var(--text-2);font-weight:600}
+.lot__seller>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lot-sheet__media{margin-bottom:18px;border-radius:18px;aspect-ratio:16/9}
+.lot-sheet__title{font:600 20px/1.3 var(--display)}
+.lot-sheet__price{margin-top:8px;font:600 24px/1.2 var(--display);color:var(--gold-hi)}
+.lot-sheet__desc{margin-top:14px;color:var(--text-2);line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14.5px}
+.kv span{color:var(--text-3)}
+.kv b{font-weight:700;text-align:right}
+.contact{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 8px;padding:14px 14px 14px 18px;border-radius:16px;border:1px solid rgba(227,179,65,.28);background:rgba(227,179,65,.06)}
+.contact small{display:block;margin-bottom:4px;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.contact b{font-size:15.5px;word-break:break-word}
+
+/* IRP-лист */
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:26px}
+.kpi{display:grid;gap:8px;padding:16px 18px}
+.kpi b{font:600 clamp(22px,4vw,28px)/1 var(--display)}
+.kpi span{font-size:13px;color:var(--text-3)}
+.kpi--hot b{color:#fca5a5}
+.irp{display:grid;gap:10px;margin-top:16px}
+.irp-head{display:none}
+.irp-row{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"nick pun" "vio vio" "date admin";align-items:center;gap:8px 12px;padding:16px 18px 16px 22px;overflow:hidden}
+.irp-row::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:var(--sev,var(--text-3))}
+.irp-nick{grid-area:nick;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15.5px;font-weight:800}
+.irp-vio{grid-area:vio;color:var(--text-2);font-size:14.5px}
+.irp-pun{grid-area:pun;justify-self:end}
+.irp-date{grid-area:date;color:var(--text-3);font-size:13px}
+.irp-admin{grid-area:admin;justify-self:end;color:var(--text-3);font-size:13px}
+.sev-warn{--sev:#facc15}.sev-mute{--sev:#60a5fa}.sev-jail{--sev:#fb923c}.sev-ban{--sev:#f87171}.sev-perm{--sev:#c084fc}
+@media(min-width:780px){
+  .irp-head,.irp-row{grid-template-columns:minmax(0,1.05fr) minmax(0,1.9fr) 172px 112px 128px;grid-template-areas:"nick vio pun date admin";gap:16px}
+  .irp-head{display:grid;margin-top:22px;padding:0 18px 0 22px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+  .irp-pun,.irp-admin{justify-self:start}
+  .irp{margin-top:10px}
+}
+.irp-note{display:flex;align-items:flex-start;gap:10px;margin-top:22px;padding:16px 18px;border-radius:16px;border:1px dashed var(--border-2);color:var(--text-3);font-size:14px}
+.irp-note .i{width:18px;height:18px;margin-top:1px}
+
+/* шторки */
+dialog.sheet{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:var(--text);display:flex;align-items:flex-end;justify-content:center;overflow:hidden}
+dialog.sheet:not([open]){display:none}
+dialog.sheet::backdrop{background:rgba(3,4,6,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:0;transition:opacity .35s ease}
+dialog.sheet.is-open::backdrop{opacity:1}
+.sheet__panel{position:relative;width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;padding:8px 22px calc(22px + env(safe-area-inset-bottom));border:1px solid var(--border-2);border-bottom:0;border-radius:26px 26px 0 0;background:linear-gradient(180deg,#14161c,#0f1115);box-shadow:0 -30px 80px -20px rgba(0,0,0,.8);transform:translateY(105%);transition:transform .45s var(--ease)}
+dialog.sheet.is-open .sheet__panel{transform:none}
+.sheet--wide .sheet__panel{max-width:880px}
+.sheet__grip{width:42px;height:5px;margin:6px auto 4px;border-radius:9px;background:rgba(255,255,255,.14)}
+.sheet__head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0 16px}
+.sheet__title{font:600 18px/1.3 var(--display)}
+.sheet__text{color:var(--text-2);font-size:15px;line-height:1.55}
+.sheet__lead{margin-bottom:18px}
+.sheet__actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}
+.sheet .label{margin:24px 0 10px}
+@media(min-width:640px){
+  dialog.sheet{align-items:center;padding:24px}
+  .sheet__panel{padding:8px 26px 26px;border-bottom:1px solid var(--border-2);border-radius:26px;opacity:0;transform:translateY(18px) scale(.97);transition:transform .4s var(--ease),opacity .3s ease}
+  dialog.sheet.is-open .sheet__panel{opacity:1;transform:none}
+  .sheet__grip{display:none}
+}
+.mini{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:1px solid var(--border);background:var(--surface)}
+.mini>.i{width:22px;height:22px;color:var(--text-3)}
+.mini__body{display:grid;gap:4px;min-width:0}
+.mini__body b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link{width:fit-content;color:var(--gold-hi);font-size:14px;font-weight:700}
+.link:hover{text-decoration:underline}
+.viewer{width:100%;max-height:75vh;object-fit:contain;border-radius:16px;background:#000}
+
+/* уведомления и подвал */
+.toasts{position:fixed;inset:auto 0 calc(18px + env(safe-area-inset-bottom)) 0;z-index:200;display:grid;justify-items:center;gap:8px;width:auto;height:auto;margin:0;padding:0 16px;border:0;background:transparent;color:inherit;overflow:visible;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;max-width:440px;padding:12px 16px 12px 14px;border-radius:14px;border:1px solid var(--border-2);background:rgba(24,27,34,.94);box-shadow:0 18px 50px -12px rgba(0,0,0,.75);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-size:14.5px;font-weight:600;color:var(--text);animation:toast-in .45s var(--ease) both}
+.toast .i{width:18px;height:18px;color:var(--gold)}
+.toast--error .i{color:var(--red)}
+.toast.is-out{animation:toast-out .28s ease both}
+.footer{border-top:1px solid var(--border)}
+.footer__inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px;padding-top:24px;padding-bottom:calc(24px + env(safe-area-inset-bottom));color:var(--text-3);font-size:13px}
+.footer__brand{display:inline-flex;align-items:center;gap:10px;color:var(--text-2);font-weight:600}
+.noscript{padding:40px 20px;text-align:center;color:var(--text-2)}
+
+/* анимации */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+@keyframes fade-in{from{opacity:0}}
+@keyframes fade-out{to{opacity:0}}
+@keyframes slide-in-r{from{opacity:0;transform:translateX(36px)}}
+@keyframes slide-in-l{from{opacity:0;transform:translateX(-36px)}}
+@keyframes slide-out-l{to{opacity:0;transform:translateX(-28px)}}
+@keyframes slide-out-r{to{opacity:0;transform:translateX(28px)}}
+@keyframes li-in{from{opacity:0;transform:translateY(-10px) scale(.97)}}
+@keyframes li-out{to{opacity:0;transform:scale(.96)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.32)}70%{transform:scale(.92)}100%{transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 55%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+@keyframes toast-in{from{opacity:0;transform:translateY(16px) scale(.96)}}
+@keyframes toast-out{to{opacity:0;transform:translateY(8px) scale(.98)}}
+.is-entering .reveal{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i,0) * 55ms)}
+.is-new{animation:li-in .5s var(--ease) both}
+.enter-fwd{animation:slide-in-r .5s var(--ease) both}
+.enter-back{animation:slide-in-l .5s var(--ease) both}
+.enter-same{animation:fade-in .35s ease both}
+
+/* переходы между страницами (View Transitions API) */
+::view-transition-old(root),::view-transition-new(root){mix-blend-mode:normal}
+html[data-dir=fwd]::view-transition-old(root){animation:slide-out-l .22s cubic-bezier(.4,0,1,1) both}
+html[data-dir=fwd]::view-transition-new(root){animation:slide-in-r .5s var(--ease) both}
+html[data-dir=back]::view-transition-old(root){animation:slide-out-r .22s cubic-bezier(.4,0,1,1) both}
+html[data-dir=back]::view-transition-new(root){animation:slide-in-l .5s var(--ease) both}
+html[data-dir=same]::view-transition-old(root){animation:fade-out .2s ease both}
+html[data-dir=same]::view-transition-new(root){animation:rise .45s var(--ease) both}
+::view-transition-group(section-icon){animation-duration:.55s;animation-timing-function:var(--ease)}
+::view-transition-group(topbar){animation-duration:.3s}
+html[data-dir=list]::view-transition-old(root){display:none}
+html[data-dir=list]::view-transition-new(root){animation:none}
+html[data-dir=list]::view-transition-group(*){animation-duration:.45s;animation-timing-function:var(--ease)}
+html[data-dir=list]::view-transition-new(*):only-child{animation:li-in .45s var(--ease) both}
+html[data-dir=list]::view-transition-old(*):only-child{animation:li-out .22s ease both}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+}
+</style>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<header class="topbar" id="topbar"></header>
+<main class="view" id="view" tabindex="-1"></main>
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <span class="footer__brand"><span class="brand__mark brand__mark--sm" data-mark>RP</span><span>© <span data-year>2026</span> <span data-name>RP Portal</span></span></span>
+    <span>Все персонажи и события вымышлены, совпадения случайны</span>
+  </div>
+</footer>
+<div class="toasts" id="toasts" popover="manual" aria-live="polite"></div>
+<noscript><p class="noscript">Для работы портала включите JavaScript.</p></noscript>
+<script>
+(() => {
+'use strict';
+
+/* ═══════════════ НАСТРОЙКИ ═══════════════ */
+const CONFIG = {
+  name: 'RP Portal',         // название проекта
+  mark: 'RP',                // буквы в логотипе
+  subtitle: 'Ролевой портал',
+};
+
+/* IRP-лист — реестр подтверждённых нарушений. Записи вносит администрация прямо сюда.
+   type: warn — предупреждение, mute — мут, jail — jail, ban — бан, perm — перманентный бан. date: ГГГГ-ММ-ДД */
+const IRP_LIST = [
+  { nick: 'NoScope_228',  violation: 'DM — стрельба по игрокам у мэрии',          punishment: 'Бан 3 дня',        type: 'ban',  date: '2026-10-12', admin: 'Admin_Kane' },
+  { nick: 'Vlad_Turbo',   violation: 'DB — наезд на пешеходов у больницы',        punishment: 'Jail 60 мин',      type: 'jail', date: '2026-10-11', admin: 'Admin_Rose' },
+  { nick: 'xX_Reaper_Xx', violation: 'Читы — аимбот, подтверждено записью',        punishment: 'Перманентный бан', type: 'perm', date: '2026-10-10', admin: 'Admin_Kane' },
+  { nick: 'Masha_Belova', violation: 'MG — использование информации из Discord',  punishment: 'Предупреждение',   type: 'warn', date: '2026-10-09', admin: 'Admin_Lee' },
+  { nick: 'Kostya_Dm',    violation: 'RK — месть после смерти персонажа',         punishment: 'Бан 7 дней',       type: 'ban',  date: '2026-10-08', admin: 'Admin_Rose' },
+  { nick: 'TimurGG',      violation: 'Оскорбления в OOC-чате',                    punishment: 'Мут 120 мин',      type: 'mute', date: '2026-10-07', admin: 'Admin_Lee' },
+  { nick: 'Denis_Black',  violation: 'NonRP — уход от погони через стену',        punishment: 'Предупреждение',   type: 'warn', date: '2026-10-05', admin: 'Admin_Kane' },
+  { nick: 'ProGamer_01',  violation: 'PG — побег из наручников без отыгровки',    punishment: 'Jail 30 мин',      type: 'jail', date: '2026-10-03', admin: 'Admin_Rose' },
+  { nick: 'Lisa_Fox',     violation: 'FearRP — игнорирование угрозы оружием',     punishment: 'Предупреждение',   type: 'warn', date: '2026-09-29', admin: 'Admin_Lee' },
+  { nick: 'Artem_Kr',     violation: 'Обход блокировки с другого аккаунта',        punishment: 'Перманентный бан', type: 'perm', date: '2026-09-25', admin: 'Admin_Kane' },
+];
+
+/* Демо-контент соцсети и черного рынка — замените или удалите. */
+const MEMBERS = [
+  { id: 'm1', name: 'Мия Картер',    handle: 'mia.carter',  bio: 'Журналист городской газеты. Пишу о том, о чём другие молчат.' },
+  { id: 'm2', name: 'Даниэль Кросс', handle: 'd.cross',     bio: 'Владелец бара «Полночь». Двери открыты до рассвета.' },
+  { id: 'm3', name: 'Рэй Коллинз',   handle: 'officer.ray', bio: 'Офицер патрульной службы. Соблюдайте скоростной режим.' },
+  { id: 'm4', name: 'Алекс Риверс',  handle: 'a.rivers',    bio: 'Механик из северного района. Чиню всё, что ездит.' },
+  { id: 'm5', name: 'Ева Морено',    handle: 'eva.ems',     bio: 'Парамедик. Если вы меня видите — у вас был плохой день.' },
+];
+const SEED_POSTS = [ // minutes — сколько минут назад
+  { id: 's1', author: 'm1', minutes: 14,   likes: 23, text: 'Срочно в номер: этой ночью у порта снова видели колонну чёрных внедорожников без номеров. Кто-нибудь знает, что там происходит? Пишите — анонимность гарантирую.' },
+  { id: 's2', author: 'm2', minutes: 95,   likes: 41, text: 'Пятница в «Полночи»: живая музыка, новое меню и скидка 20% всем, кто придёт в костюме. Столики лучше бронировать заранее.' },
+  { id: 's3', author: 'm3', minutes: 300,  likes: 12, text: 'Патрульная служба напоминает: на трассе к аэропорту идут ремонтные работы, ограничение — 60 км/ч. Нарушителей будем останавливать.' },
+  { id: 's4', author: 'm4', minutes: 1560, likes: 37, text: 'Открыл мастерскую возле заправки на Четвёртой улице. Тюнинг, покраска, ремонт после «неудачных выходных». Лишних вопросов не задаю.' },
+  { id: 's5', author: 'm5', minutes: 3000, likes: 58, text: 'Спасибо всем за смену: 14 вызовов и ни одного потерянного пациента. Берегите себя и пристёгивайтесь.' },
+];
+const SEED_LISTINGS = [ // hours — сколько часов назад, price: null — договорная
+  { id: 'd1', cat: 'vehicles', title: 'Седан без номеров',      price: 18500, hours: 3,  seller: 'Тень',      contact: 'В игре: Shadow_Docks', desc: 'Чистый, с перебитым VIN и полным баком. Забирать ночью в доках, без лишних вопросов.' },
+  { id: 'd2', cat: 'weapons',  title: 'Пистолет с глушителем',  price: 7200,  hours: 7,  seller: 'Курьер',    contact: 'В игре: Courier_77',   desc: 'Без истории, два магазина в комплекте. Встреча только лично.' },
+  { id: 'd3', cat: 'intel',    title: 'Маршруты инкассаторов',  price: 12000, hours: 20, seller: 'Аноним',    contact: 'В игре: Night_Owl',    desc: 'Расписание и маршруты на неделю вперёд. Информация свежая и проверенная.' },
+  { id: 'd4', cat: 'services', title: 'Отмыть деньги',          price: null,  hours: 30, seller: 'Бухгалтер', contact: 'В игре: Mr_Ledger',    desc: 'Через сеть прачечных, комиссия 20%. Работаю с суммами от 50 000.' },
+  { id: 'd5', cat: 'other',    title: 'Поддельные документы',   price: 5000,  hours: 52, seller: 'Печатник',  contact: 'В игре: Printer_RP',   desc: 'Паспорт, права, пропуск на базу. Изготовление — сутки.' },
+  { id: 'd6', cat: 'vehicles', title: 'Байк для быстрых дел',   price: 9800,  hours: 75, seller: 'Механик',   contact: 'В игре: Rivers_A',     desc: 'Лёгкий и тихий, уходит от любой погони. Под сиденьем тайник.' },
+];
+
+const RULES = [
+  { code: 'DM', title: 'DeathMatch — убийство или нападение без RP-причины' },
+  { code: 'DB', title: 'DriveBy — убийство или наезд из транспорта' },
+  { code: 'RK', title: 'RevengeKill — месть после смерти персонажа' },
+  { code: 'NonRP', title: 'Действия, невозможные в реальной жизни' },
+  { code: 'PG', title: 'PowerGaming — сверхвозможности персонажа' },
+  { code: 'MG', title: 'MetaGaming — использование OOC-информации в игре' },
+  { code: 'FearRP', title: 'Игнорирование угрозы жизни персонажа' },
+  { code: 'Оскорбления', title: 'Оскорбления и токсичность в чате или голосе' },
+  { code: 'Читы', title: 'Читы, скрипты и использование багов' },
+  { code: 'Другое', title: 'Иное нарушение правил сервера' },
+];
+const CATEGORIES = [
+  { key: 'weapons', label: 'Оружие', icon: 'crosshair' },
+  { key: 'vehicles', label: 'Транспорт', icon: 'car' },
+  { key: 'services', label: 'Услуги', icon: 'wrench' },
+  { key: 'intel', label: 'Информация', icon: 'eye' },
+  { key: 'other', label: 'Прочее', icon: 'package' },
+];
+const IRP_TYPES = [
+  { key: 'warn', label: 'Предупреждения' },
+  { key: 'mute', label: 'Муты' },
+  { key: 'jail', label: 'Jail' },
+  { key: 'ban', label: 'Баны' },
+  { key: 'perm', label: 'Перманент' },
+];
+const SECTIONS = [
+  { key: 'registration', num: '01', title: 'Регистрация персонажа', desc: 'Анкета, фотография и досье на рассмотрение администрации', icon: 'idCard' },
+  { key: 'social', num: '02', title: 'Соцсеть', desc: 'Лента, публикации, лайки и профили участников', icon: 'users' },
+  { key: 'complaints', num: '03', title: 'Жалобы', desc: 'Обращения на нарушителей с доказательствами', icon: 'gavel' },
+  { key: 'market', num: '04', title: 'Черный рынок', desc: 'Гостевые объявления о товарах и контактах', icon: 'bag', wide: true },
+  { key: 'irp', num: '05', title: 'IRP-лист', desc: 'Реестр подтвержденных нарушений', icon: 'scroll', wide: true },
+];
+const SEC = Object.fromEntries(SECTIONS.map(s => [s.key, s]));
+const CAT = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
+const BIO_MIN = 40;
+
+/* Иконки: Lucide (lucide.dev), лицензия ISC */
+const ICONS = {
+  idCard: '<path d="M13 19a4 4 0 0 0-8 0"/><path d="M16 10h2"/><path d="M16 14h2"/><circle cx="9" cy="12" r="3"/><rect x="2" y="5" width="20" height="14" rx="2"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+  gavel: '<path d="m14 13-8.381 8.38a1 1 0 0 1-3.001-3l8.384-8.381"/><path d="m16 16 6-6"/><path d="m21.5 10.5-8-8"/><path d="m8 8 6-6"/><path d="m8.5 7.5 8 8"/>',
+  bag: '<path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/>',
+  scroll: '<path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>',
+  arrowUpRight: '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+  arrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+  imagePlus: '<path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/>',
+  image: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  heart: '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
+  trash: '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  crosshair: '<circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/>',
+  car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>',
+  eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  package: '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+};
+const icon = name => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+
+/* ═══════════════ Утилиты ═══════════════ */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const toNum = v => (/^\d{1,10}$/.test(String(v).trim()) ? Number(v) : NaN);
+const safeImg = s => (typeof s === 'string' && /^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(s) ? s : '');
+const plural = (n, one, few, many) => { const a = Math.abs(n) % 100, b = a % 10; return a > 10 && a < 20 ? many : b === 1 ? one : b >= 2 && b <= 4 ? few : many; };
+const pl = (n, forms) => `${n} ${plural(n, ...forms)}`;
+const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const two = n => String(n).padStart(2, '0');
+const fmtDay = ts => { const d = new Date(ts); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+const fmtDateTime = ts => { const d = new Date(ts); return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${two(d.getHours())}:${two(d.getMinutes())}`; };
+const parseDay = s => { const [y, m, d] = String(s).split('-').map(Number); return new Date(y, (m || 1) - 1, d || 1).getTime(); };
+const localInput = (d = new Date()) => `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}T${two(d.getHours())}:${two(d.getMinutes())}`;
+const rtf = new Intl.RelativeTimeFormat('ru', { numeric: 'auto' });
+function ago(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 50) return 'только что';
+  if (s < 3600) return rtf.format(-Math.round(s / 60), 'minute');
+  if (s < 86400) return rtf.format(-Math.round(s / 3600), 'hour');
+  if (s < 604800) return rtf.format(-Math.round(s / 86400), 'day');
+  return fmtDay(ts);
+}
+const money = n => (n ? '$ ' + Number(n).toLocaleString('ru-RU') : 'Договорная');
+function hue(str) { let h = 7; for (const ch of String(str)) h = (h * 31 + ch.codePointAt(0)) % 360; return h; }
+const initials = name => String(name).trim().split(/\s+/).slice(0, 2).map(w => [...w][0] || '').join('').toUpperCase();
+function safeUrl(raw) {
+  const v = String(raw).trim();
+  if (!v) return '';
+  try {
+    const u = new URL(/^[a-z][a-z\d+.-]*:/i.test(v) ? v : 'https://' + v);
+    return /^https?:$/.test(u.protocol) && u.hostname.includes('.') ? u.href : '';
+  } catch { return ''; }
+}
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+function autoGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 320) + 'px'; }
+
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+// Сжимаем фото, чтобы оно поместилось в localStorage (~5 МБ на сайт).
+async function processImage(file, max = 1280) {
+  if (!IMAGE_TYPES.includes(file.type)) throw new Error('Поддерживаются только JPG, PNG или WEBP');
+  if (file.size > 8 * 1024 * 1024) throw new Error('Файл больше 8 МБ');
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('Не удалось прочитать изображение'));
+      i.src = url;
+    });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const w = Math.max(1, Math.round(img.naturalWidth * k)), h = Math.max(1, Math.round(img.naturalHeight * k));
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#14161c';
+    ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, w, h);
+    const webp = canvas.toDataURL('image/webp', 0.85);
+    return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+  ($('dialog[open]') || document.body).append(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch {}
+  ta.remove();
+  return ok;
+}
+
+/* ═══════════════ Данные (хранятся в браузере) ═══════════════ */
+const KEY = 'rp-portal:v1';
+const defaults = () => ({ profile: { nickname: '' }, applications: [], posts: [], liked: [], complaints: [], listings: [], drafts: {} });
+function load() {
+  const d = defaults();
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (raw && typeof raw === 'object') {
+      for (const k of Object.keys(d)) if (raw[k] && typeof raw[k] === 'object' && Array.isArray(raw[k]) === Array.isArray(d[k])) d[k] = raw[k];
+    }
+  } catch {}
+  return d;
+}
+let state = load();
+function save(quiet = false) {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); return true; }
+  catch {
+    if (!quiet) toast('Не удалось сохранить: в браузере закончилось место. Удалите старые записи с фото.', 'error');
+    return false;
+  }
+}
+function commit(mutate) {
+  const backup = JSON.stringify(state);
+  mutate(state);
+  if (save()) return true;
+  state = JSON.parse(backup);
+  return false;
+}
+
+const BOOT = Date.now();
+const seedPosts = SEED_POSTS.map(p => ({ ...p, createdAt: BOOT - p.minutes * 6e4 }));
+const seedListings = SEED_LISTINGS.map(l => ({ ...l, createdAt: BOOT - l.hours * 36e5 }));
+const IRP_SORTED = IRP_LIST.map((x, idx) => ({ ...x, idx, ts: parseDay(x.date) })).sort((a, b) => b.ts - a.ts);
+const byNewest = (a, b) => b.createdAt - a.createdAt;
+const allPosts = () => [...state.posts, ...seedPosts].sort(byNewest);
+const allListings = () => [...state.listings, ...seedListings].sort(byNewest);
+const likesOf = p => (p.likes || 0) + (state.liked.includes(p.id) ? 1 : 0);
+const activeApp = () => [...state.applications].sort(byNewest).find(a => a.status !== 'withdrawn');
+function me() {
+  const app = activeApp();
+  const nick = state.profile.nickname;
+  const name = app?.name || nick;
+  return { id: 'me', name: name || 'Гость', handle: nick, photo: app?.photo || '', bio: app?.bio || '', isGuest: !name };
+}
+const memberById = id => (id === 'me' ? me() : MEMBERS.find(m => m.id === id));
+
+const STATUS = {
+  pending: ['На модерации', 'amber'], approved: ['Одобрена', 'green'], rejected: ['Отклонена', 'red'], withdrawn: ['Отозвана', 'muted'],
+  review: ['На рассмотрении', 'amber'], accepted: ['Принята', 'green'], declined: ['Отклонена', 'red'],
+};
+const statusHTML = s => { const [label, cls] = STATUS[s] || [s, 'muted']; return `<span class="status status--${cls}"><i class="dot"></i>${esc(label)}</span>`; };
+const pillHTML = (html, cls = '') => `<span class="pill${cls ? ' pill--' + cls : ''}">${html}</span>`;
+function avatar(p, size = 40) {
+  if (p.isGuest) return `<span class="avatar avatar--guest" style="--s:${size}px" aria-hidden="true">${icon('user')}</span>`;
+  const img = safeImg(p.photo);
+  return `<span class="avatar" style="--s:${size}px;--h:${hue(p.name)}" aria-hidden="true">${img ? `<img src="${img}" alt="">` : esc(initials(p.name))}</span>`;
+}
+const emptyHTML = (ic, title, text = '', extra = '') => `<div class="empty"><span class="empty__icon">${icon(ic)}</span><b>${title}</b>${text ? `<p>${text}</p>` : ''}${extra}</div>`;
+
+/* ═══════════════ Роутинг и плавные переходы ═══════════════ */
+const main = $('#view');
+const topbar = $('#topbar');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let current = null, actions = {}, topbarInfo = {}, enterTimer = 0, vtSeq = 0;
+const scrollMem = {};
+
+function parseRoute() {
+  const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(p => { try { return decodeURIComponent(p); } catch { return p; } });
+  const [sec = '', sub = '', arg = ''] = parts;
+  return { sec, sub, arg, depth: !sec ? 0 : sub ? 2 : 1, key: parts.join('/') };
+}
+
+// dir: fwd/back — сдвиг страницы, same — мягкая смена, list — анимация элементов списка.
+function transition(dir, update, { morph = null, newKey = null } = {}) {
+  const root = document.documentElement;
+  const run = () => { try { update(); } catch (err) { console.error(err); } };
+  if (!document.startViewTransition || reduceMotion.matches || dir === 'none' || document.hidden) {
+    run();
+    if (!reduceMotion.matches && dir !== 'none') {
+      if (dir === 'list') { if (newKey) $(`[data-vt="${newKey}"]`)?.classList.add('is-new'); }
+      else { main.classList.remove('enter-fwd', 'enter-back', 'enter-same'); void main.offsetWidth; main.classList.add('enter-' + dir); }
+    }
+    return;
+  }
+  const seq = ++vtSeq;
+  const tag = () => {
+    if (morph) $$(`[data-morph="${morph}"]`).forEach(el => { el.style.viewTransitionName = 'section-icon'; });
+    if (dir === 'list') $$('[data-vt]').forEach(el => { el.style.viewTransitionName = 'vt-' + el.dataset.vt; });
+  };
+  const untag = () => $$('[data-morph],[data-vt]').forEach(el => el.style.removeProperty('view-transition-name'));
+  untag();
+  root.dataset.dir = dir;
+  tag();
+  const vt = document.startViewTransition(() => { untag(); run(); tag(); });
+  vt.ready.catch(() => {});
+  vt.finished.catch(() => {}).finally(() => { if (seq === vtSeq) { delete root.dataset.dir; untag(); } });
+}
+
+function go() {
+  const r = parseRoute();
+  const valid = Object.prototype.hasOwnProperty.call(VIEWS, r.sec) && (!r.sub || (r.sec === 'social' && r.sub === 'u' && r.arg));
+  if (!valid) { history.replaceState(null, '', '#/'); go(); return; }
+  closeSheets();
+  const prev = current;
+  let dir = 'none', morph = null;
+  if (prev) {
+    if (r.depth !== prev.depth) dir = r.depth > prev.depth ? 'fwd' : 'back';
+    else if (r.sec !== prev.sec) dir = SECTIONS.findIndex(s => s.key === r.sec) > SECTIONS.findIndex(s => s.key === prev.sec) ? 'fwd' : 'back';
+    else dir = 'same';
+    if (prev.depth === 0 && r.depth === 1) morph = r.sec;
+    if (prev.depth === 1 && r.depth === 0) morph = prev.sec;
+    scrollMem[prev.key] = scrollY;
+  }
+  current = r;
+  transition(dir, () => {
+    render(r);
+    scrollTo(0, dir === 'back' ? scrollMem[r.key] || 0 : 0);
+  }, { morph });
+  if (prev) main.focus({ preventScroll: true });
+}
+
+function render(r) {
+  const s = SEC[r.sec];
+  const view = VIEWS[r.sec](r);
+  const html = document.documentElement;
+  html.dataset.route = s ? r.sec : 'home';
+  html.style.setProperty('--page-w', !s || s.wide ? '1080px' : '760px');
+  topbarInfo = { title: view.title, kicker: view.kicker };
+  renderTopbar();
+  actions = view.actions || {};
+  main.innerHTML = `<div class="page">${view.html}</div>`;
+  main.classList.add('is-entering');
+  clearTimeout(enterTimer);
+  enterTimer = setTimeout(() => main.classList.remove('is-entering'), 1300);
+  view.mount?.(main.firstElementChild);
+  document.title = s ? `${view.title || s.title} — ${CONFIG.name}` : `${CONFIG.name} — ${CONFIG.subtitle}`;
+}
+
+function refresh(scroll = 'keep') {
+  const y = scrollY;
+  transition('same', () => { render(current); scrollTo(0, scroll === 'top' ? 0 : y); });
+}
+
+function renderTopbar() {
+  const r = current, s = SEC[r.sec];
+  const m = me();
+  const left = s
+    ? `<a class="icon-btn" href="${r.depth > 1 ? '#/' + r.sec : '#/'}" aria-label="Назад">${icon('chevronLeft')}</a>
+       <div class="crumb"><div class="crumb__kicker">${esc(topbarInfo.kicker || 'Раздел ' + s.num)}</div><h1 class="crumb__title">${esc(topbarInfo.title || s.title)}</h1></div>`
+    : `<a class="brand" href="#/" aria-label="${esc(CONFIG.name)} — на главную"><span class="brand__mark">${esc(CONFIG.mark)}</span><span class="brand__text"><span class="brand__name">${esc(CONFIG.name)}</span><span class="brand__sub">${esc(CONFIG.subtitle)}</span></span></a><span class="topbar__spacer"></span>`;
+  const label = m.isGuest ? 'Гость' : state.profile.nickname || m.name;
+  topbar.innerHTML = `<div class="topbar__inner wrap">${left}<button class="user-chip" type="button" data-act="profile" aria-label="Профиль: ${esc(label)}">${avatar(m, 32)}<span class="user-chip__name">${esc(label)}</span></button></div>`;
+  topbar.classList.toggle('is-scrolled', scrollY > 6);
+}
+
+const INTRO_META = {
+  registration: () => (state.applications.some(a => a.status === 'pending') ? 'Ваша анкета на рассмотрении у администрации' : 'Заполните досье — его проверит администрация'),
+  social: () => `${pl(MEMBERS.length + (me().isGuest ? 0 : 1), ['участник', 'участника', 'участников'])} · ${pl(allPosts().length, ['публикация', 'публикации', 'публикаций'])}`,
+  complaints: () => { const n = state.complaints.filter(c => c.status === 'review').length; return n ? `${n} на рассмотрении у администрации` : 'Администрация проверяет каждое обращение'; },
+  market: () => `${pl(allListings().length, ['объявление', 'объявления', 'объявлений'])} · сделки на свой страх и риск`,
+  irp: () => 'Записи вносит администрация после проверки жалоб',
+};
+function introHTML(s) {
+  return `<section class="intro wrap">
+    <span class="sec__icon" data-morph="${s.key}">${icon(s.icon)}</span>
+    <div><p class="intro__desc">${s.desc}</p><p class="intro__meta">${INTRO_META[s.key]()}</p></div>
+  </section>`;
+}
+// Счётчики в шапке раздела и в профиле после точечных обновлений списка.
+function syncCounters() {
+  const meta = $('.intro__meta');
+  if (meta && current) meta.textContent = INTRO_META[current.sec]?.() || '';
+  const stats = $('.stats');
+  if (stats && current?.sub === 'u') stats.outerHTML = statsHTML(current.arg);
+}
+
+/* ═══════════════ Главная ═══════════════ */
+function viewHome() {
+  const app = activeApp();
+  return {
+    html: `
+<section class="hero wrap">
+  <div class="hero__grid">
+    <div>
+      <span class="eyebrow reveal" style="--i:0">${icon('sparkles')}${esc(CONFIG.subtitle)}</span>
+      <h1 class="hero__title reveal" style="--i:1">Твоя история начинается <em>здесь</em></h1>
+      <p class="hero__text reveal" style="--i:2">Зарегистрируй персонажа, общайся в соцсети города, подавай жалобы и находи сделки на черном рынке — всё в одном месте.</p>
+      <div class="hero__actions reveal" style="--i:3">
+        <a class="btn btn--gold" href="#/registration">${app ? 'Моя анкета' : 'Создать персонажа'}${icon('arrowRight')}</a>
+        <a class="btn btn--ghost" href="#/social">Открыть ленту</a>
+      </div>
+    </div>
+    ${idCardHTML(app)}
+  </div>
+</section>
+<section class="wrap">
+  <h2 class="label reveal" style="--i:4">Разделы<span>${SECTIONS.length}</span></h2>
+  <nav class="sections" aria-label="Разделы портала">${SECTIONS.map(secCardHTML).join('')}</nav>
+</section>`,
+    mount: mountHome,
+  };
+}
+
+function idCardHTML(app) {
+  const no = app ? String(parseInt(app.id.slice(-5), 36) % 1e6).padStart(6, '0') : '000000';
+  const photo = app ? safeImg(app.photo) : '';
+  const f = (label, value, wide = false) => `<span class="idcard__f${wide ? ' idcard__f--wide' : ''}"><small>${label}</small><b>${value}</b></span>`;
+  return `
+<a class="idcard reveal" style="--i:3" href="#/registration" aria-label="${app ? 'Досье персонажа' : 'Заполнить анкету персонажа'}">
+  <span class="idcard__inner">
+    <span class="idcard__top"><span>Досье гражданина</span><span class="idcard__no">№ ${no}</span></span>
+    <span class="idcard__main">
+      <span class="idcard__photo">${photo ? `<img src="${photo}" alt="">` : icon('user')}</span>
+      <span class="idcard__fields">
+        ${f('Имя и фамилия', app ? esc(app.name) : 'Не заполнено', true)}
+        ${f('Возраст', app ? app.age : '—')}
+        ${f('Рост', app ? app.height + ' см' : '—')}
+        ${f('Вес', app ? app.weight + ' кг' : '—')}
+      </span>
+    </span>
+    <span class="idcard__bottom">${app ? statusHTML(app.status) : `<span class="status status--gold">${icon('plus')}Заполнить анкету</span>`}<span class="idcard__code" aria-hidden="true"></span></span>
+  </span>
+</a>`;
+}
+
+function secCardHTML(s, i) {
+  return `<a class="sec reveal" style="--i:${i + 5}" href="#/${s.key}">
+    <span class="sec__icon" data-morph="${s.key}">${icon(s.icon)}</span>
+    <span class="sec__body"><span class="sec__title">${s.title}${secMeta(s.key)}</span><span class="sec__desc">${s.desc}</span></span>
+    <span class="sec__go" aria-hidden="true">${icon('arrowUpRight')}</span>
+  </a>`;
+}
+function secMeta(key) {
+  if (key === 'registration') { const a = activeApp(); return a ? pillHTML(STATUS[a.status][0], STATUS[a.status][1]) : ''; }
+  if (key === 'social') return pillHTML(pl(allPosts().length, ['пост', 'поста', 'постов']));
+  if (key === 'complaints') { const n = state.complaints.filter(c => c.status === 'review').length; return n ? pillHTML(`${n} на рассмотрении`, 'amber') : ''; }
+  if (key === 'market') return pillHTML(pl(allListings().length, ['лот', 'лота', 'лотов']));
+  if (key === 'irp') return pillHTML(pl(IRP_LIST.length, ['запись', 'записи', 'записей']));
+  return '';
+}
+function mountHome(root) {
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  root.addEventListener('pointermove', e => {
+    const sec = e.target.closest('.sec');
+    if (sec) {
+      const r = sec.getBoundingClientRect();
+      sec.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      sec.style.setProperty('--my', `${e.clientY - r.top}px`);
+    }
+    const card = e.target.closest('.idcard');
+    if (card && !reduceMotion.matches) {
+      const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      card.style.setProperty('--ry', `${(x - 0.5) * 14}deg`);
+      card.style.setProperty('--rx', `${(0.5 - y) * 10}deg`);
+      card.style.setProperty('--sx', `${100 - x * 100}%`);
+    }
+  });
+  root.addEventListener('pointerout', e => {
+    const card = e.target.closest('.idcard');
+    if (card && !card.contains(e.relatedTarget)) ['--rx', '--ry', '--sx'].forEach(p => card.style.removeProperty(p));
+  });
+}
+
+/* ═══════════════ 01 · Регистрация персонажа ═══════════════ */
+function viewRegistration() {
+  const apps = [...state.applications].sort(byNewest);
+  const pending = apps.find(a => a.status === 'pending');
+  const history = apps.length ? `<h2 class="label reveal" style="--i:1">История заявок</h2><div class="stack">${apps.map((a, i) => appCardHTML(a, i)).join('')}</div>` : '';
+  const body = pending
+    ? `${history}
+       <div class="notice reveal" style="--i:3">Анкета отправлена и ожидает решения администрации. Новую заявку можно подать после рассмотрения текущей.</div>
+       <div class="row-start reveal" style="--i:4"><button class="btn btn--ghost btn--sm" type="button" data-act="withdraw-app" data-id="${pending.id}">${icon('undo')}Отозвать заявку</button></div>`
+    : regFormHTML() + history;
+  return {
+    html: introHTML(SEC.registration) + `<div class="wrap">${body}</div>`,
+    mount: pending ? null : mountRegForm,
+    actions: {
+      'open-app': el => openAppSheet(el.dataset.id),
+      'withdraw-app': async el => {
+        const ok = await confirmSheet({ title: 'Отозвать анкету?', text: 'Заявка будет снята с рассмотрения. После этого можно подать новую.', ok: 'Отозвать', danger: true });
+        if (!ok) return;
+        if (!commit(st => { const a = st.applications.find(x => x.id === el.dataset.id); if (a) a.status = 'withdrawn'; })) return;
+        refresh('top');
+        toast('Заявка отозвана');
+      },
+    },
+  };
+}
+function appCardHTML(a, i = 0) {
+  return `<button class="app card reveal" style="--i:${Math.min(i + 2, 8)}" type="button" data-act="open-app" data-id="${a.id}" data-vt="a-${a.id}">
+    <img class="app__photo" src="${safeImg(a.photo)}" alt="">
+    <span class="app__body">${statusHTML(a.status)}<span class="app__name">${esc(a.name)}</span><span class="app__meta">${pl(a.age, ['год', 'года', 'лет'])} · ${a.height} см · ${a.weight} кг</span></span>
+  </button>`;
+}
+function dropHTML({ id, title, sub, photo = '', small = false }) {
+  const src = safeImg(photo);
+  const attr = src ? ` src="${src}"` : '';
+  return `<label class="drop${small ? ' drop--sm' : ''}${src ? ' has-image' : ''}" id="${id}">
+    <input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp">
+    <span class="drop__empty"><span class="drop__icon">${icon('imagePlus')}</span><span class="drop__title">${title}</span><span class="drop__sub">${sub}</span></span>
+    <img class="drop__bg" alt=""${attr}><img class="drop__img" alt=""${attr}>
+    <span class="drop__bar"><span class="btn btn--glass btn--sm">${icon('image')}Заменить</span><button class="btn btn--glass btn--sm" type="button" data-remove>${icon('trash')}Удалить</button></span>
+    <span class="drop__busy"><span class="spinner"></span></span>
+  </label>`;
+}
+function setDropImage(drop, src) {
+  drop.classList.toggle('has-image', !!src);
+  $$('img', drop).forEach(img => { if (src) img.src = src; else img.removeAttribute('src'); });
+}
+function bindDrop(drop, onFile) {
+  const input = $('input[type=file]', drop);
+  input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) onFile(f); });
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('is-over'); });
+  drop.addEventListener('dragleave', e => { if (!drop.contains(e.relatedTarget)) drop.classList.remove('is-over'); });
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('is-over'); const f = e.dataTransfer?.files?.[0]; if (f) onFile(f); });
+}
+const numField = (name, label, ph, val) => `<div class="field" data-field="${name}">
+    <label class="field__label" for="f-${name}">${label}</label>
+    <input class="input" id="f-${name}" name="${name}" type="number" inputmode="numeric" placeholder="${ph}" value="${esc(val ?? '')}">
+    <p class="field__error"></p>
+  </div>`;
+function regFormHTML() {
+  const d = state.drafts.reg || {};
+  return `<form class="form" id="regForm" novalidate>
+    <h2 class="label reveal" style="--i:1">Фотография</h2>
+    <div class="field reveal" style="--i:2" data-field="photo">
+      ${dropHTML({ id: 'regDrop', title: 'Загрузить фотографию персонажа', sub: 'JPG, PNG или WEBP, до 8 МБ', photo: d.photo })}
+      <p class="field__error"></p>
+    </div>
+    <h2 class="label reveal" style="--i:3">Досье</h2>
+    <div class="field reveal" style="--i:4" data-field="cname">
+      <label class="field__label" for="f-cname">Имя персонажа</label>
+      <input class="input" id="f-cname" name="cname" maxlength="40" placeholder="Например, Виктор Лэйн" autocomplete="off" value="${esc(d.cname || '')}">
+      <p class="field__error"></p>
+    </div>
+    <div class="row3 reveal" style="--i:5">${numField('age', 'Возраст', '28', d.age)}${numField('height', 'Рост, см', '184', d.height)}${numField('weight', 'Вес, кг', '78', d.weight)}</div>
+    <div class="field reveal" style="--i:6" data-field="bio">
+      <div class="field__label"><label for="f-bio">Биография</label><span class="field__hint" id="bioCount">Минимум ${BIO_MIN} символов</span></div>
+      <textarea class="input" id="f-bio" name="bio" rows="6" maxlength="4000" placeholder="Происхождение, характер, ключевые события и мотивация персонажа">${esc(d.bio || '')}</textarea>
+      <p class="field__error"></p>
+    </div>
+    <button class="btn btn--gold btn--block reveal" style="--i:7" type="submit">${icon('send')}<span>Отправить на модерацию</span></button>
+  </form>`;
+}
+const NAME_RE = /^[A-Za-zА-Яа-яЁё'’-]{2,}(?: [A-Za-zА-Яа-яЁё'’-]{2,})+$/;
+function validateReg(form, photo) {
+  const el = form.elements;
+  const data = { name: el.cname.value.trim().replace(/\s+/g, ' '), age: toNum(el.age.value), height: toNum(el.height.value), weight: toNum(el.weight.value), bio: el.bio.value.trim() };
+  const errors = {};
+  if (!photo) errors.photo = 'Загрузите фотографию персонажа';
+  if (!NAME_RE.test(data.name)) errors.cname = 'Укажите имя и фамилию персонажа';
+  if (!(data.age >= 16 && data.age <= 99)) errors.age = 'От 16 до 99';
+  if (!(data.height >= 140 && data.height <= 220)) errors.height = 'От 140 до 220';
+  if (!(data.weight >= 40 && data.weight <= 200)) errors.weight = 'От 40 до 200';
+  if (data.bio.length < BIO_MIN) errors.bio = `Нужно ещё ${pl(BIO_MIN - data.bio.length, ['символ', 'символа', 'символов'])}`;
+  return { errors, data };
+}
+function mountRegForm(root) {
+  const form = $('#regForm', root);
+  if (!form) return;
+  const drop = $('#regDrop', form), bio = form.elements.bio, counter = $('#bioCount', form);
+  let photo = safeImg(state.drafts.reg?.photo), sent = false;
+  const saveDraft = debounce(() => {
+    if (sent) return;
+    const el = form.elements;
+    state.drafts.reg = { cname: el.cname.value, age: el.age.value, height: el.height.value, weight: el.weight.value, bio: bio.value, photo };
+    save(true);
+  }, 400);
+  const setPhoto = src => { photo = src; setDropImage(drop, src); setError(form, 'photo', ''); saveDraft(); };
+  bindDrop(drop, async file => {
+    drop.classList.add('is-busy');
+    try { setPhoto(await processImage(file, 640)); } catch (err) { setError(form, 'photo', err.message); }
+    drop.classList.remove('is-busy');
+  });
+  $('[data-remove]', drop).addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); setPhoto(''); });
+  const count = () => {
+    const n = bio.value.trim().length;
+    counter.textContent = n >= BIO_MIN ? pl(n, ['символ', 'символа', 'символов']) : n ? `${n} / ${BIO_MIN}` : `Минимум ${BIO_MIN} символов`;
+    counter.classList.toggle('is-ok', n >= BIO_MIN);
+  };
+  count();
+  form.addEventListener('input', e => {
+    e.target.closest('[data-field]')?.classList.remove('is-invalid');
+    if (e.target === bio) count();
+    saveDraft();
+  });
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('[type=submit]', form);
+    const { errors, data } = validateReg(form, photo);
+    if (showErrors(form, errors)) { shake(btn); return; }
+    sent = true;
+    setLoading(btn, true);
+    await sleep(700);
+    const app = { id: uid(), ...data, photo, status: 'pending', createdAt: Date.now() };
+    const ok = commit(st => { st.applications.push(app); delete st.drafts.reg; });
+    setLoading(btn, false);
+    if (!ok) { sent = false; return; }
+    refresh('top');
+    toast('Анкета отправлена на модерацию');
+  });
+}
+function openAppSheet(id) {
+  const a = state.applications.find(x => x.id === id);
+  if (!a) return;
+  openSheet({
+    title: 'Досье персонажа',
+    body: `<div class="dossier">
+        <img class="dossier__photo" src="${safeImg(a.photo)}" alt="">
+        <div>${statusHTML(a.status)}<h3 class="dossier__name">${esc(a.name)}</h3><div class="app__meta">${pl(a.age, ['год', 'года', 'лет'])} · ${a.height} см · ${a.weight} кг</div><div class="dossier__date">Подана ${fmtDateTime(a.createdAt)}</div></div>
+      </div>
+      <h4 class="label">Биография</h4>
+      <p class="dossier__bio">${esc(a.bio)}</p>`,
+  });
+}
+
+/* ═══════════════ 02 · Соцсеть ═══════════════ */
+function viewSocial(r) {
+  if (r.sub === 'u') return viewProfile(r.arg);
+  const posts = allPosts();
+  return {
+    html: `${introHTML(SEC.social)}
+      <div class="wrap">
+        <h2 class="label reveal" style="--i:1">Участники</h2>
+        <div class="members reveal" style="--i:1">${membersHTML()}</div>
+        ${composerHTML()}
+        <h2 class="label reveal" style="--i:3">Лента</h2>
+        <div class="feed" id="feed">${posts.length ? posts.map(postCardHTML).join('') : emptyHTML('users', 'Пока тихо', 'Станьте первым, кто напишет в ленту.')}</div>
+      </div>`,
+    mount: mountSocial,
+    actions: postActions,
+  };
+}
+function membersHTML() {
+  const m = me();
+  const mine = m.isGuest
+    ? `<button class="member member--add" type="button" data-act="profile">${avatar(m, 60)}<span class="member__name">Вы</span></button>`
+    : `<a class="member" href="#/social/u/me">${avatar(m, 60)}<span class="member__name">Вы</span></a>`;
+  return mine + MEMBERS.map(p => `<a class="member" href="#/social/u/${p.id}">${avatar(p, 60)}<span class="member__name">${esc(p.name.split(' ')[0])}</span></a>`).join('');
+}
+function composerHTML() {
+  const m = me();
+  const ph = m.isGuest ? 'Что происходит в городе?' : `Что нового, ${m.name.split(' ')[0]}?`;
+  return `<form class="composer card reveal" style="--i:2" id="composer" novalidate>
+    <div class="composer__row">${avatar(m, 40)}<textarea name="text" rows="1" maxlength="1000" placeholder="${esc(ph)}" aria-label="Текст публикации"></textarea></div>
+    <div class="composer__preview" hidden><img alt=""><button type="button" class="composer__rm" aria-label="Убрать фото">${icon('x')}</button></div>
+    <div class="composer__bar">
+      <label class="tool">${icon('image')}<span>Фото</span><input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp"></label>
+      <span class="composer__hint" aria-live="polite"></span>
+      <button class="btn btn--gold btn--sm" type="submit" disabled>${icon('send')}<span>Опубликовать</span></button>
+    </div>
+  </form>`;
+}
+function postCardHTML(p, i = 0) {
+  const a = memberById(p.author) || { id: '', name: 'Неизвестный' };
+  const img = safeImg(p.image);
+  return `<article class="post card reveal" style="--i:${Math.min(i + 4, 10)}" data-post="${p.id}" data-vt="post-${p.id}">
+    <header class="post__head">
+      <a href="#/social/u/${a.id}" tabindex="-1" aria-hidden="true">${avatar(a, 42)}</a>
+      <div class="post__who"><a class="post__author" href="#/social/u/${a.id}">${esc(a.name)}</a><span class="post__time">${a.handle ? '@' + esc(a.handle) + ' · ' : ''}${ago(p.createdAt)}</span></div>
+      ${p.author === 'me' ? `<button class="icon-btn icon-btn--sm" type="button" data-act="del-post" aria-label="Удалить публикацию">${icon('trash')}</button>` : ''}
+    </header>
+    ${p.text ? `<p class="post__text">${esc(p.text)}</p>` : ''}
+    ${img ? `<button class="post__media" type="button" data-act="open-img" aria-label="Открыть изображение"><img src="${img}" alt="" loading="lazy"></button>` : ''}
+    <footer class="post__foot"><button class="like" type="button" data-act="like" aria-pressed="${state.liked.includes(p.id)}" aria-label="Нравится">${icon('heart')}<span>${likesOf(p)}</span></button></footer>
+  </article>`;
+}
+const postActions = {
+  like: el => {
+    const id = el.closest('[data-post]').dataset.post;
+    const on = !state.liked.includes(id);
+    if (!commit(st => { st.liked = on ? [...st.liked, id] : st.liked.filter(x => x !== id); })) return;
+    const p = allPosts().find(x => x.id === id);
+    el.setAttribute('aria-pressed', String(on));
+    $('span', el).textContent = p ? likesOf(p) : '';
+    el.classList.remove('pop');
+    if (on) { void el.offsetWidth; el.classList.add('pop'); }
+    syncCounters();
+  },
+  'del-post': async el => {
+    const id = el.closest('[data-post]').dataset.post;
+    const ok = await confirmSheet({ title: 'Удалить публикацию?', text: 'Публикация исчезнет из ленты без возможности восстановления.', ok: 'Удалить', danger: true });
+    if (!ok) return;
+    if (!commit(st => { st.posts = st.posts.filter(p => p.id !== id); st.liked = st.liked.filter(x => x !== id); })) return;
+    transition('list', () => { $(`[data-post="${id}"]`)?.remove(); syncCounters(); });
+    toast('Публикация удалена');
+  },
+};
+function mountSocial(root) {
+  const form = $('#composer', root);
+  if (!form) return;
+  const ta = form.elements.text, btn = $('[type=submit]', form), prev = $('.composer__preview', form), hint = $('.composer__hint', form);
+  let image = '';
+  const sync = () => { btn.disabled = !ta.value.trim() && !image; };
+  const showPreview = () => { prev.hidden = !image; if (image) $('img', prev).src = image; };
+  ta.addEventListener('input', () => { autoGrow(ta); sync(); });
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) form.requestSubmit(); });
+  $('input[type=file]', form).addEventListener('change', async e => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    hint.textContent = 'Обработка фото…';
+    try { image = await processImage(f, 1280); } catch (err) { toast(err.message, 'error'); }
+    hint.textContent = '';
+    showPreview(); sync();
+  });
+  $('.composer__rm', prev).addEventListener('click', () => { image = ''; showPreview(); sync(); });
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = ta.value.trim();
+    if (!text && !image) return;
+    const wasGuest = me().isGuest;
+    if (wasGuest && !(await askNickname('Чтобы публиковать в ленте, укажите свой никнейм.'))) return;
+    const post = { id: uid(), author: 'me', text, image, createdAt: Date.now() };
+    if (!commit(st => { st.posts.push(post); })) return;
+    ta.value = ''; image = '';
+    showPreview(); autoGrow(ta); sync();
+    if (wasGuest) refresh('keep');
+    else transition('list', () => { $('#feed .empty')?.remove(); $('#feed')?.insertAdjacentHTML('afterbegin', postCardHTML(post)); syncCounters(); }, { newKey: 'post-' + post.id });
+    toast('Публикация опубликована');
+  });
+}
+function viewProfile(id) {
+  const p = memberById(id);
+  if (!p) {
+    return { title: 'Профиль', kicker: 'Соцсеть', html: `<div class="wrap" style="padding-top:28px">${emptyHTML('user', 'Профиль не найден', 'Возможно, участник удалил страницу.', '<a class="btn btn--ghost btn--sm" href="#/social">К ленте</a>')}</div>` };
+  }
+  const posts = allPosts().filter(x => x.author === id);
+  const bio = id === 'me' ? p.bio || (p.isGuest ? 'Укажите никнейм, чтобы публиковать в ленте.' : 'Персонаж ещё не зарегистрирован.') : p.bio;
+  return {
+    title: p.name,
+    kicker: 'Профиль',
+    html: `<div class="wrap">
+      <section class="profile card reveal" style="--i:0;--h:${hue(p.name)}">
+        <div class="profile__cover"></div>
+        <div class="profile__body">
+          ${avatar(p, 96)}
+          <h2 class="profile__name">${esc(p.name)}</h2>
+          ${p.handle ? `<p class="profile__handle">@${esc(p.handle)}</p>` : ''}
+          <p class="profile__bio">${esc(bio)}</p>
+          ${statsHTML(id)}
+          ${id === 'me' && p.isGuest ? `<button class="btn btn--gold btn--sm" type="button" data-act="profile" style="margin-top:18px">${icon('pencil')}Указать никнейм</button>` : ''}
+        </div>
+      </section>
+      <h2 class="label reveal" style="--i:1">Публикации</h2>
+      <div class="feed" id="feed">${posts.length ? posts.map(postCardHTML).join('') : emptyHTML('send', 'Пока нет публикаций')}</div>
+    </div>`,
+    actions: postActions,
+  };
+}
+
+function statsHTML(id) {
+  const posts = allPosts().filter(x => x.author === id);
+  const likes = posts.reduce((n, x) => n + likesOf(x), 0);
+  return `<div class="stats">
+    <div class="stat"><b>${posts.length}</b><span>${plural(posts.length, 'публикация', 'публикации', 'публикаций')}</span></div>
+    <div class="stat"><b>${likes}</b><span>${plural(likes, 'лайк', 'лайка', 'лайков')}</span></div>
+  </div>`;
+}
+
+/* ═══════════════ 03 · Жалобы ═══════════════ */
+let cTab = 'new';
+const myComplaints = () => [...state.complaints].sort(byNewest);
+function viewComplaints() {
+  const mine = myComplaints();
+  return {
+    html: `${introHTML(SEC.complaints)}
+      <div class="wrap">
+        <div class="seg reveal" style="--i:1;--n:2;--idx:${cTab === 'new' ? 0 : 1}" role="tablist" aria-label="Жалобы">
+          <span class="seg__thumb" aria-hidden="true"></span>
+          <button type="button" role="tab" aria-selected="${cTab === 'new'}" data-act="c-tab" data-tab="new">Новая жалоба</button>
+          <button type="button" role="tab" aria-selected="${cTab === 'mine'}" data-act="c-tab" data-tab="mine">Мои жалобы${mine.length ? `<span class="count">${mine.length}</span>` : ''}</button>
+        </div>
+        <div id="cPane" class="reveal" style="--i:2">${cTab === 'new' ? complaintFormHTML() : complaintListHTML(mine)}</div>
+      </div>`,
+    mount: mountComplaintForm,
+    actions: {
+      'c-tab': el => setComplaintTab(el.dataset.tab),
+      'withdraw-c': async el => {
+        const id = el.dataset.id;
+        const ok = await confirmSheet({ title: 'Отозвать жалобу?', text: 'Жалоба будет закрыта и не попадёт на рассмотрение.', ok: 'Отозвать', danger: true });
+        if (!ok) return;
+        if (!commit(st => { const c = st.complaints.find(x => x.id === id); if (c) c.status = 'withdrawn'; })) return;
+        const c = state.complaints.find(x => x.id === id);
+        transition('list', () => { const card = $(`[data-vt="c-${id}"]`); if (card && c) card.outerHTML = complaintCardHTML(c); syncCounters(); });
+        toast('Жалоба отозвана');
+      },
+    },
+  };
+}
+function setComplaintTab(tab) {
+  if (tab === cTab) return;
+  cTab = tab;
+  const toForm = tab === 'new';
+  const seg = $('.seg');
+  seg.style.setProperty('--idx', toForm ? 0 : 1);
+  $$('[role=tab]', seg).forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  const pane = $('#cPane');
+  pane.innerHTML = toForm ? complaintFormHTML() : complaintListHTML(myComplaints());
+  pane.classList.remove('reveal', 'pane-in-l', 'pane-in-r');
+  void pane.offsetWidth;
+  if (!reduceMotion.matches) pane.classList.add(toForm ? 'pane-in-l' : 'pane-in-r');
+  if (toForm) mountComplaintForm(main);
+}
+const linkRowHTML = () => `<div class="link-row">${icon('link')}<input class="input" type="url" inputmode="url" placeholder="https://youtube.com/watch?v=…" autocomplete="off" spellcheck="false" aria-label="Ссылка на доказательство"><button type="button" class="icon-btn icon-btn--sm" data-rm-link aria-label="Удалить ссылку">${icon('x')}</button></div>`;
+function complaintFormHTML() {
+  const now = localInput();
+  return `<form class="form" id="cForm" novalidate>
+    <h2 class="label">Участники</h2>
+    <div class="row2">
+      <div class="field" data-field="reporter"><label class="field__label" for="c-reporter">Ваш никнейм</label><input class="input" id="c-reporter" name="reporter" maxlength="32" placeholder="Ник в игре" autocomplete="off" spellcheck="false" value="${esc(state.profile.nickname)}"><p class="field__error"></p></div>
+      <div class="field" data-field="offender"><label class="field__label" for="c-offender">Нарушитель</label><input class="input" id="c-offender" name="offender" maxlength="32" placeholder="Ник нарушителя" autocomplete="off" spellcheck="false"><p class="field__error"></p></div>
+    </div>
+    <h2 class="label">Нарушение</h2>
+    <div class="field" data-field="rule">
+      <div class="chips chips--wrap" role="radiogroup" aria-label="Пункт правил">${RULES.map(r => `<button type="button" class="chip" role="radio" aria-checked="false" data-rule="${esc(r.code)}">${esc(r.code)}</button>`).join('')}</div>
+      <p class="field__note" id="ruleNote">Выберите, какое правило было нарушено</p>
+      <p class="field__error"></p>
+    </div>
+    <div class="field" data-field="when"><label class="field__label" for="c-when">Дата и время</label><input class="input" id="c-when" name="when" type="datetime-local" max="${now}" value="${now}"><p class="field__error"></p></div>
+    <div class="field" data-field="text"><div class="field__label"><label for="c-text">Описание ситуации</label><span class="field__hint">Минимум 30 символов</span></div><textarea class="input" id="c-text" name="text" rows="5" maxlength="3000" placeholder="Что произошло, где и при каких обстоятельствах"></textarea><p class="field__error"></p></div>
+    <h2 class="label">Доказательства</h2>
+    <div class="field" data-field="evidence">
+      <div class="links" id="cLinks">${linkRowHTML()}</div>
+      <button type="button" class="add-link" data-add-link>${icon('plus')}Добавить ссылку</button>
+      <div class="shots" id="cShots"></div>
+      <p class="field__note">Видео (YouTube, Rutube), скриншоты или ссылки на облако — до 5 ссылок и 3 скриншотов.</p>
+      <p class="field__error"></p>
+    </div>
+    <button class="btn btn--gold btn--block" type="submit">${icon('send')}<span>Отправить жалобу</span></button>
+  </form>`;
+}
+function mountComplaintForm(root) {
+  const form = $('#cForm', root);
+  if (!form) return;
+  const links = $('#cLinks', form), addBtn = $('[data-add-link]', form), shotsBox = $('#cShots', form), note = $('#ruleNote', form), btn = $('[type=submit]', form);
+  let rule = '';
+  const shots = [];
+  const syncAdd = () => { addBtn.hidden = links.children.length >= 5; };
+  $$('[data-rule]', form).forEach(b => b.addEventListener('click', () => {
+    rule = b.dataset.rule;
+    $$('[data-rule]', form).forEach(x => x.setAttribute('aria-checked', String(x === b)));
+    note.textContent = RULES.find(r => r.code === rule)?.title || '';
+    setError(form, 'rule', '');
+  }));
+  addBtn.addEventListener('click', () => {
+    if (links.children.length >= 5) return;
+    links.insertAdjacentHTML('beforeend', linkRowHTML());
+    $('input', links.lastElementChild).focus();
+    syncAdd();
+  });
+  links.addEventListener('click', e => {
+    const b = e.target.closest('[data-rm-link]');
+    if (!b) return;
+    const row = b.closest('.link-row');
+    if (links.children.length > 1) row.remove(); else $('input', row).value = '';
+    syncAdd();
+  });
+  const renderShots = () => {
+    shotsBox.innerHTML = shots.map((s, i) => `<span class="shot"><img src="${s}" alt=""><button type="button" class="shot__rm" data-rm-shot="${i}" aria-label="Удалить скриншот">${icon('x')}</button></span>`).join('')
+      + (shots.length < 3 ? `<label class="shot shot--add">${icon('imagePlus')}<span>Скриншот</span><input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>` : '');
+  };
+  shotsBox.addEventListener('change', async e => {
+    const files = [...(e.target.files || [])].slice(0, 3 - shots.length);
+    for (const f of files) {
+      try { shots.push(await processImage(f, 1280)); setError(form, 'evidence', ''); } catch (err) { setError(form, 'evidence', err.message); }
+    }
+    renderShots();
+  });
+  shotsBox.addEventListener('click', e => {
+    const b = e.target.closest('[data-rm-shot]');
+    if (!b) return;
+    e.preventDefault();
+    shots.splice(Number(b.dataset.rmShot), 1);
+    renderShots();
+  });
+  renderShots();
+  form.addEventListener('input', e => e.target.closest('[data-field]')?.classList.remove('is-invalid'));
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const el = form.elements;
+    const v = { reporter: el.reporter.value.trim(), offender: el.offender.value.trim(), when: el.when.value, text: el.text.value.trim() };
+    const urls = $$('input', links).map(i => i.value.trim()).filter(Boolean).map(safeUrl);
+    const whenTs = new Date(v.when).getTime();
+    const errors = {};
+    if (v.reporter.length < 3) errors.reporter = 'Укажите свой никнейм';
+    if (v.offender.length < 3) errors.offender = 'Укажите ник нарушителя';
+    if (!rule) errors.rule = 'Выберите нарушение';
+    if (!v.when || Number.isNaN(whenTs)) errors.when = 'Укажите дату и время';
+    else if (whenTs > Date.now() + 6e4) errors.when = 'Дата не может быть в будущем';
+    if (v.text.length < 30) errors.text = `Опишите подробнее — нужно ещё ${pl(30 - v.text.length, ['символ', 'символа', 'символов'])}`;
+    if (urls.some(u => !u)) errors.evidence = 'Проверьте ссылки — например, https://youtube.com/…';
+    else if (!urls.length && !shots.length) errors.evidence = 'Добавьте хотя бы одну ссылку или скриншот';
+    if (showErrors(form, errors)) { shake(btn); return; }
+    setLoading(btn, true);
+    await sleep(650);
+    const c = { id: uid(), ...v, rule, links: urls, shots, status: 'review', createdAt: Date.now() };
+    const ok = commit(st => { st.complaints.push(c); if (!st.profile.nickname) st.profile.nickname = v.reporter; });
+    setLoading(btn, false);
+    if (!ok) return;
+    cTab = 'mine';
+    refresh('top');
+    toast('Жалоба отправлена администрации');
+  });
+}
+function complaintListHTML(list) {
+  if (!list.length) {
+    return `<div style="margin-top:26px">${emptyHTML('gavel', 'Жалоб пока нет', 'Если кто-то нарушил правила — опишите ситуацию и приложите доказательства.', `<button class="btn btn--gold btn--sm" type="button" data-act="c-tab" data-tab="new">${icon('plus')}Подать жалобу</button>`)}</div>`;
+  }
+  return `<div class="stack" style="margin-top:26px">${list.map(complaintCardHTML).join('')}</div>`;
+}
+function complaintCardHTML(c) {
+  const links = (c.links || []).map(safeUrl).filter(Boolean);
+  const shots = (c.shots || []).map(safeImg).filter(Boolean);
+  const evidence = links.map(u => `<a class="ev" href="${esc(u)}" target="_blank" rel="noopener noreferrer nofollow">${icon('link')}<span>${esc(host(u))}</span></a>`).join('')
+    + shots.map(s => `<button class="ev ev--img" type="button" data-act="open-img" aria-label="Открыть скриншот"><img src="${s}" alt=""></button>`).join('');
+  return `<article class="complaint card" data-vt="c-${c.id}">
+    <div class="complaint__top">${statusHTML(c.status)}<span class="complaint__id">#${esc(c.id.slice(-5).toUpperCase())}</span></div>
+    <h3 class="complaint__title">Жалоба на <b>${esc(c.offender)}</b></h3>
+    <div class="complaint__meta">${pillHTML(esc(c.rule), 'gold')}<span>${icon('clock')}${fmtDateTime(new Date(c.when).getTime())}</span><span>${icon('user')}${esc(c.reporter)}</span></div>
+    <p class="complaint__text">${esc(c.text)}</p>
+    ${evidence ? `<div class="evidence">${evidence}</div>` : ''}
+    ${c.status === 'review' ? `<div class="complaint__foot"><button class="btn btn--ghost btn--sm" type="button" data-act="withdraw-c" data-id="${c.id}">${icon('undo')}Отозвать</button></div>` : ''}
+  </article>`;
+}
+
+/* ═══════════════ 04 · Черный рынок ═══════════════ */
+const market = { cat: 'all', q: '' };
+function filteredListings() {
+  const q = market.q.trim().toLowerCase();
+  return allListings().filter(l => (market.cat === 'all' || l.cat === market.cat) && (!q || `${l.title} ${l.desc} ${l.seller}`.toLowerCase().includes(q)));
+}
+function viewMarket() {
+  return {
+    html: `${introHTML(SEC.market)}
+      <div class="wrap">
+        <div class="toolbar reveal" style="--i:1">
+          <label class="search">${icon('search')}<input class="input" id="mSearch" type="search" placeholder="Поиск по объявлениям" autocomplete="off" value="${esc(market.q)}" aria-label="Поиск по объявлениям"></label>
+          <button class="btn btn--gold" type="button" data-act="new-lot" aria-label="Разместить объявление">${icon('plus')}<span class="hide-sm">Разместить</span></button>
+        </div>
+        <div class="chips reveal" style="--i:2" role="group" aria-label="Категории">${[{ key: 'all', label: 'Все', icon: 'bag' }, ...CATEGORIES].map(c => `<button type="button" class="chip" data-act="m-cat" data-cat="${c.key}" aria-pressed="${market.cat === c.key}">${icon(c.icon)}${c.label}</button>`).join('')}</div>
+        <div class="grid" id="mGrid">${gridHTML()}</div>
+      </div>`,
+    mount: root => {
+      const input = $('#mSearch', root);
+      input.addEventListener('input', debounce(() => { market.q = input.value; updateGrid(); }, 180));
+    },
+    actions: {
+      'm-cat': el => {
+        market.cat = el.dataset.cat;
+        $$('[data-act="m-cat"]').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
+        updateGrid();
+      },
+      'open-lot': el => openLot(el.dataset.id),
+      'new-lot': () => lotFormSheet(),
+      'm-reset': () => { market.cat = 'all'; market.q = ''; refresh('keep'); },
+    },
+  };
+}
+function gridHTML() {
+  const list = filteredListings();
+  if (!list.length) return emptyHTML('search', 'Ничего не найдено', 'Попробуйте изменить запрос или категорию.', '<button class="btn btn--ghost btn--sm" type="button" data-act="m-reset">Сбросить фильтры</button>');
+  return list.map(lotCardHTML).join('');
+}
+function updateGrid(newKey = null) {
+  transition('list', () => { const g = $('#mGrid'); if (g) g.innerHTML = gridHTML(); syncCounters(); }, { newKey });
+}
+function lotMediaHTML(l, cls = '') {
+  const c = CAT[l.cat] || CAT.other;
+  const img = safeImg(l.photo);
+  return `<span class="lot__media ${cls}">${img ? `<img src="${img}" alt="" loading="lazy">` : icon(c.icon)}<span class="pill lot__cat">${icon(c.icon)}${c.label}</span></span>`;
+}
+function lotCardHTML(l, i = 0) {
+  return `<button class="lot card reveal" style="--i:${Math.min(i + 3, 10)}" type="button" data-act="open-lot" data-id="${l.id}" data-vt="lot-${l.id}">
+    ${lotMediaHTML(l)}
+    <span class="lot__body">
+      <span class="lot__title">${esc(l.title)}</span>
+      <span class="lot__price">${money(l.price)}</span>
+      <span class="lot__desc">${esc(l.desc)}</span>
+      <span class="lot__foot"><span class="lot__seller">${avatar({ name: l.seller }, 24)}<span>${esc(l.seller)}</span></span><span>${ago(l.createdAt)}</span></span>
+    </span>
+  </button>`;
+}
+function openLot(id) {
+  const l = allListings().find(x => x.id === id);
+  if (!l) return;
+  openSheet({
+    title: 'Объявление',
+    body: `${lotMediaHTML(l, 'lot-sheet__media')}
+      <h3 class="lot-sheet__title">${esc(l.title)}</h3>
+      <div class="lot-sheet__price">${money(l.price)}</div>
+      <p class="lot-sheet__desc">${esc(l.desc)}</p>
+      <div class="contact"><div><small>Контакт</small><b>${esc(l.contact)}</b></div><button class="btn btn--gold btn--sm" type="button" data-copy>${icon('copy')}<span>Копировать</span></button></div>
+      <div class="kv"><span>Продавец</span><b>${esc(l.seller)}</b></div>
+      <div class="kv"><span>Размещено</span><b>${ago(l.createdAt)}</b></div>
+      ${l.author === 'me' ? `<button class="btn btn--danger btn--block" type="button" data-del style="margin-top:18px">${icon('trash')}Снять объявление</button>` : ''}`,
+    onMount(d, close) {
+      const copyBtn = $('[data-copy]', d);
+      copyBtn.addEventListener('click', async () => {
+        const ok = await copyText(l.contact);
+        copyBtn.innerHTML = ok ? `${icon('check')}<span>Скопировано</span>` : `${icon('alert')}<span>Не вышло</span>`;
+        setTimeout(() => { copyBtn.innerHTML = `${icon('copy')}<span>Копировать</span>`; }, 1800);
+      });
+      $('[data-del]', d)?.addEventListener('click', async () => {
+        const ok = await confirmSheet({ title: 'Снять объявление?', text: 'Объявление исчезнет с черного рынка.', ok: 'Снять', danger: true });
+        if (!ok) return;
+        if (!commit(st => { st.listings = st.listings.filter(x => x.id !== l.id); })) return;
+        await close();
+        updateGrid();
+        toast('Объявление снято');
+      });
+    },
+  });
+}
+function lotFormSheet() {
+  let cat = market.cat !== 'all' ? market.cat : 'other';
+  let photo = '';
+  openSheet({
+    title: 'Новое объявление',
+    body: `<form class="form form--sheet" novalidate>
+      <div class="field" data-field="title"><label class="field__label" for="l-title">Что продаёте</label><input class="input" id="l-title" name="title" maxlength="60" placeholder="Например, седан без номеров" autocomplete="off"><p class="field__error"></p></div>
+      <div class="field"><span class="field__label">Категория</span><div class="chips chips--wrap" role="group" aria-label="Категория">${CATEGORIES.map(c => `<button type="button" class="chip" data-cat="${c.key}" aria-pressed="${c.key === cat}">${icon(c.icon)}${c.label}</button>`).join('')}</div></div>
+      <div class="row2">
+        <div class="field" data-field="price"><label class="field__label" for="l-price">Цена, $</label><input class="input" id="l-price" name="price" type="number" inputmode="numeric" min="0" placeholder="Договорная"><p class="field__error"></p></div>
+        <div class="field" data-field="contact"><label class="field__label" for="l-contact">Контакт</label><input class="input" id="l-contact" name="contact" maxlength="60" placeholder="Ник в игре или Discord" autocomplete="off" value="${esc(state.profile.nickname ? 'В игре: ' + state.profile.nickname : '')}"><p class="field__error"></p></div>
+      </div>
+      <div class="field" data-field="desc"><label class="field__label" for="l-desc">Описание</label><textarea class="input" id="l-desc" name="desc" rows="4" maxlength="600" placeholder="Состояние, условия сделки, место встречи"></textarea><p class="field__error"></p></div>
+      <div class="field" data-field="photo"><span class="field__label">Фото<span class="field__hint">необязательно</span></span>${dropHTML({ id: 'lotDrop', title: 'Добавить фото', sub: 'JPG, PNG или WEBP, до 8 МБ', small: true })}<p class="field__error"></p></div>
+      <button class="btn btn--gold btn--block" type="submit">${icon('send')}<span>Опубликовать</span></button>
+    </form>`,
+    onMount(d, close) {
+      const form = $('form', d), drop = $('#lotDrop', d);
+      $$('[data-cat]', form).forEach(b => b.addEventListener('click', () => {
+        cat = b.dataset.cat;
+        $$('[data-cat]', form).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      }));
+      bindDrop(drop, async file => {
+        drop.classList.add('is-busy');
+        try { photo = await processImage(file, 1280); setDropImage(drop, photo); setError(form, 'photo', ''); } catch (err) { setError(form, 'photo', err.message); }
+        drop.classList.remove('is-busy');
+      });
+      $('[data-remove]', drop).addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); photo = ''; setDropImage(drop, ''); });
+      form.addEventListener('input', e => e.target.closest('[data-field]')?.classList.remove('is-invalid'));
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const el = form.elements;
+        const v = { title: el.title.value.trim(), price: el.price.value.trim(), contact: el.contact.value.trim(), desc: el.desc.value.trim() };
+        const price = v.price ? toNum(v.price) : 0;
+        const errors = {};
+        if (v.title.length < 3) errors.title = 'Минимум 3 символа';
+        if (v.price && !(price >= 0 && price <= 1e9)) errors.price = 'Только целое число';
+        if (v.contact.length < 3) errors.contact = 'Укажите, как с вами связаться';
+        if (v.desc.length < 10) errors.desc = 'Опишите товар хотя бы в паре слов';
+        if (showErrors(form, errors)) { shake($('[type=submit]', form)); return; }
+        const m = me();
+        const lot = { id: uid(), cat, title: v.title, price: price || null, desc: v.desc, contact: v.contact, photo, author: 'me', seller: m.isGuest ? 'Гость' : state.profile.nickname || m.name, createdAt: Date.now() };
+        if (!commit(st => { st.listings.push(lot); })) return;
+        await close();
+        toast('Объявление опубликовано');
+        if (current.sec !== 'market') return;
+        market.cat = 'all'; market.q = '';
+        const search = $('#mSearch');
+        if (search) search.value = '';
+        $$('[data-act="m-cat"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cat === 'all')));
+        updateGrid('lot-' + lot.id);
+      });
+    },
+  });
+}
+
+/* ═══════════════ 05 · IRP-лист ═══════════════ */
+const irp = { type: 'all', q: '' };
+function viewIRP() {
+  const bans = IRP_SORTED.filter(x => x.type === 'ban' || x.type === 'perm').length;
+  const week = IRP_SORTED.filter(x => x.ts >= Date.now() - 7 * 864e5).length;
+  return {
+    html: `${introHTML(SEC.irp)}
+      <div class="wrap">
+        <div class="kpis reveal" style="--i:1">
+          <div class="kpi card"><b>${IRP_SORTED.length}</b><span>${plural(IRP_SORTED.length, 'запись', 'записи', 'записей')} в реестре</span></div>
+          <div class="kpi card kpi--hot"><b>${bans}</b><span>${plural(bans, 'бан', 'бана', 'банов')}</span></div>
+          <div class="kpi card"><b>${week}</b><span>за 7 дней</span></div>
+        </div>
+        <div class="toolbar reveal" style="--i:2"><label class="search">${icon('search')}<input class="input" id="iSearch" type="search" placeholder="Поиск по нику или нарушению" autocomplete="off" value="${esc(irp.q)}" aria-label="Поиск по реестру"></label></div>
+        <div class="chips reveal" style="--i:3" role="group" aria-label="Тип наказания">${[{ key: 'all', label: 'Все' }, ...IRP_TYPES].map(t => `<button type="button" class="chip" data-act="i-type" data-type="${t.key}" aria-pressed="${irp.type === t.key}">${t.label}</button>`).join('')}</div>
+        <div class="irp-head reveal" style="--i:4" aria-hidden="true"><span>Игрок</span><span>Нарушение</span><span>Наказание</span><span>Дата</span><span>Администратор</span></div>
+        <div class="irp" id="irpList" role="list">${irpRowsHTML()}</div>
+        <p class="irp-note">${icon('info')}<span>Записи появляются после проверки жалоб. Чтобы оспорить наказание, обратитесь к администрации проекта.</span></p>
+      </div>`,
+    mount: root => {
+      const input = $('#iSearch', root);
+      input.addEventListener('input', debounce(() => { irp.q = input.value; updateIRP(); }, 180));
+    },
+    actions: {
+      'i-type': el => {
+        irp.type = el.dataset.type;
+        $$('[data-act="i-type"]').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
+        updateIRP();
+      },
+      'i-reset': () => { irp.type = 'all'; irp.q = ''; refresh('keep'); },
+    },
+  };
+}
+function irpRowsHTML() {
+  const q = irp.q.trim().toLowerCase();
+  const list = IRP_SORTED.filter(x => (irp.type === 'all' || x.type === irp.type) && (!q || `${x.nick} ${x.violation} ${x.admin}`.toLowerCase().includes(q)));
+  if (!list.length) return emptyHTML('search', 'Записей не найдено', 'Попробуйте другой ник или тип наказания.', '<button class="btn btn--ghost btn--sm" type="button" data-act="i-reset">Сбросить фильтры</button>');
+  return list.map((x, i) => `<div class="irp-row card sev-${esc(x.type)} reveal" style="--i:${Math.min(i + 5, 12)}" role="listitem" data-vt="irp-${x.idx}">
+    <span class="irp-nick">${esc(x.nick)}</span>
+    <span class="irp-vio">${esc(x.violation)}</span>
+    <span class="irp-pun">${pillHTML(esc(x.punishment), esc(x.type))}</span>
+    <span class="irp-date">${fmtDay(x.ts)}</span>
+    <span class="irp-admin">${esc(x.admin)}</span>
+  </div>`).join('');
+}
+function updateIRP() { transition('list', () => { const l = $('#irpList'); if (l) l.innerHTML = irpRowsHTML(); }); }
+
+const VIEWS = { '': viewHome, registration: viewRegistration, social: viewSocial, complaints: viewComplaints, market: viewMarket, irp: viewIRP };
+
+/* ═══════════════ Формы, шторки, уведомления ═══════════════ */
+function setError(form, field, msg) {
+  const f = $(`[data-field="${field}"]`, form);
+  if (!f) return;
+  f.classList.toggle('is-invalid', !!msg);
+  const out = $(':scope > .field__error', f);
+  if (out) out.textContent = msg || '';
+}
+function showErrors(form, errors) {
+  let first = null;
+  $$('[data-field]', form).forEach(f => {
+    const msg = errors[f.dataset.field] || '';
+    setError(form, f.dataset.field, msg);
+    if (msg && !first) first = f;
+  });
+  if (first) {
+    first.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center' });
+    $('input, textarea, button', first)?.focus({ preventScroll: true });
+  }
+  return !!first;
+}
+function setLoading(btn, on) { btn.classList.toggle('is-loading', on); btn.disabled = on; }
+function shake(el) {
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+  el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
+}
+
+function openSheet({ title, body, wide = false, onMount }) {
+  const d = document.createElement('dialog');
+  d.className = `sheet${wide ? ' sheet--wide' : ''}`;
+  d.setAttribute('aria-label', title);
+  d.innerHTML = `<div class="sheet__panel">
+    <div class="sheet__grip" aria-hidden="true"></div>
+    <div class="sheet__head"><h2 class="sheet__title">${esc(title)}</h2><button class="icon-btn icon-btn--sm" type="button" data-close aria-label="Закрыть">${icon('x')}</button></div>
+    <div class="sheet__body">${body}</div>
+  </div>`;
+  document.body.append(d);
+  let closing = null;
+  const close = () => closing || (closing = new Promise(resolve => {
+    d.classList.remove('is-open');
+    setTimeout(() => { if (d.open) d.close(); d.remove(); resolve(); }, reduceMotion.matches ? 0 : 340);
+  }));
+  d.addEventListener('cancel', e => { e.preventDefault(); close(); });
+  d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) close(); });
+  d.addEventListener('click', e => {
+    const el = e.target.closest('[data-act="open-img"]');
+    if (el) GLOBAL_ACTIONS['open-img'](el);
+  });
+  d.showModal();
+  requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add('is-open')));
+  onMount?.(d, close);
+  return { el: d, close };
+}
+function closeSheets() { $$('dialog.sheet').forEach(d => { if (d.open) d.close(); d.remove(); }); }
+function confirmSheet({ title, text, ok = 'Подтвердить', danger = false }) {
+  return new Promise(resolve => {
+    let yes = false;
+    const { el } = openSheet({
+      title,
+      body: `<p class="sheet__text">${esc(text)}</p><div class="sheet__actions"><button class="btn btn--ghost" type="button" data-close>Отмена</button><button class="btn ${danger ? 'btn--danger' : 'btn--gold'}" type="button" data-ok>${esc(ok)}</button></div>`,
+      onMount(d, close) { $('[data-ok]', d).addEventListener('click', () => { yes = true; close(); }); },
+    });
+    el.addEventListener('close', () => resolve(yes));
+  });
+}
+function openImage(src) {
+  const s = safeImg(src);
+  if (s) openSheet({ title: 'Изображение', wide: true, body: `<img class="viewer" src="${s}" alt="">` });
+}
+function profileSheet({ reason = '', onDone } = {}) {
+  const app = activeApp();
+  let saved = false;
+  const { el } = openSheet({
+    title: 'Ваш профиль',
+    body: `${reason ? `<p class="sheet__text sheet__lead">${esc(reason)}</p>` : ''}
+      <form class="form form--sheet" novalidate>
+        <div class="field" data-field="nick">
+          <label class="field__label" for="p-nick">Никнейм в игре</label>
+          <input class="input" id="p-nick" name="nick" maxlength="32" placeholder="Например, Viktor_Lane" autocomplete="off" spellcheck="false" value="${esc(state.profile.nickname)}">
+          <p class="field__error"></p>
+        </div>
+        <div class="mini">${app
+          ? `${avatar({ name: app.name, photo: app.photo }, 44)}<div class="mini__body"><b>${esc(app.name)}</b>${statusHTML(app.status)}</div>`
+          : `${icon('idCard')}<div class="mini__body"><b>Персонаж не зарегистрирован</b><a class="link" href="#/registration">Заполнить анкету</a></div>`}</div>
+        <button class="btn btn--gold btn--block" type="submit">Сохранить</button>
+      </form>
+      <button class="btn btn--text btn--block" type="button" data-reset>${icon('trash')}Удалить мои данные с этого устройства</button>`,
+    onMount(d, close) {
+      const form = $('form', d), input = form.elements.nick;
+      if (matchMedia('(hover: hover)').matches) setTimeout(() => input.focus(), 60);
+      form.addEventListener('input', () => setError(form, 'nick', ''));
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const nick = input.value.trim();
+        if (showErrors(form, nick.length < 3 ? { nick: 'Минимум 3 символа' } : {})) return;
+        if (!commit(st => { st.profile.nickname = nick; })) return;
+        saved = true;
+        close();
+        renderTopbar();
+        toast('Профиль сохранён');
+      });
+      $('[data-reset]', d).addEventListener('click', async () => {
+        const ok = await confirmSheet({ title: 'Удалить все данные?', text: 'Анкеты, публикации, жалобы и объявления, сохранённые в этом браузере, будут удалены.', ok: 'Удалить', danger: true });
+        if (!ok) return;
+        try { localStorage.removeItem(KEY); } catch {}
+        state = defaults();
+        await close();
+        refresh('top');
+        toast('Данные удалены');
+      });
+    },
+  });
+  el.addEventListener('close', () => onDone?.(saved));
+}
+const askNickname = reason => new Promise(resolve => profileSheet({ reason, onDone: resolve }));
+
+function toast(msg, type = 'ok') {
+  const box = $('#toasts');
+  const t = document.createElement('div');
+  t.className = `toast toast--${type}`;
+  t.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  t.innerHTML = `${icon(type === 'error' ? 'alert' : 'check')}<span>${esc(msg)}</span>`;
+  box.append(t);
+  // поверх открытых шторок (top layer)
+  if (box.showPopover) { try { if (box.matches(':popover-open')) box.hidePopover(); box.showPopover(); } catch {} }
+  setTimeout(() => { t.classList.add('is-out'); setTimeout(() => t.remove(), 300); }, type === 'error' ? 4200 : 2600);
+}
+
+const GLOBAL_ACTIONS = {
+  profile: () => profileSheet(),
+  'open-img': el => openImage($('img', el)?.getAttribute('src')),
+};
+
+/* ═══════════════ Запуск ═══════════════ */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.closest('dialog')) return;
+  const fn = actions[el.dataset.act] || GLOBAL_ACTIONS[el.dataset.act];
+  if (!fn) return;
+  e.preventDefault();
+  fn(el, e);
+});
+main.addEventListener('animationend', e => { if (e.target === main) main.classList.remove('enter-fwd', 'enter-back', 'enter-same'); });
+addEventListener('scroll', () => topbar.classList.toggle('is-scrolled', scrollY > 6), { passive: true });
+addEventListener('hashchange', go);
+addEventListener('storage', e => { if (e.key === KEY && current) { state = load(); render(current); } });
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+$$('[data-name]').forEach(el => { el.textContent = CONFIG.name; });
+$$('[data-mark]').forEach(el => { el.textContent = CONFIG.mark; });
+$$('[data-year]').forEach(el => { el.textContent = new Date().getFullYear(); });
+if (!location.hash || location.hash === '#') history.replaceState(null, '', '#/');
+go();
+})();
+</script>
+</body>
+</html>
